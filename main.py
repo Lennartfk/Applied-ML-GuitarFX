@@ -39,7 +39,7 @@ if __name__ == '__main__':
     print(grid.best_params_)
     print(grid.best_score_)
 
-    support_vector_machine = SVC(kernel='rbf', C=1.0, gamma='scale')
+    support_vector_machine = SVC(kernel='rbf', C=100, gamma=0.01)
     support_vector_machine.fit(X_train_val, y_train_val)
     y_pred = support_vector_machine.predict(X_test)
     test_acc = accuracy_score(y_test, y_pred)
