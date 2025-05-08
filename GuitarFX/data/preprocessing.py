@@ -33,14 +33,14 @@ class PreProcessing:
         kernel. Can also be used for other model that can only one-dimensional
         data.
         """
-        mffcs = librosa.feature.mfcc(y, sr=sr, n_mfcc=20)
+        mfccs = librosa.feature.mfcc(y, sr=sr, n_mfcc=20)
         chromatogram = librosa.feature.chroma_stft(y, sr=sr)
         spectrogram = librosa.feature.spectral_centroid(y, sr=sr)
         zero_crossing_rate = librosa.feature.zero_crossing_rate(y, sr=sr)
         root_mean_squared_error = librosa.feature.rms(y, sr=sr)
 
         return {
-            "mffcs": np.mean(mffcs, axis=1),
+            "mfccs": np.mean(mfccs, axis=1),
             "zero_crossing_rate": np.mean(zero_crossing_rate, axis=1),
             "chromatogram": np.mean(chromatogram, axis=1),
             "spectrogram": np.mean(spectrogram, axis=1),
