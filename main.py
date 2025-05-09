@@ -1,4 +1,5 @@
 from GuitarFX.data.preprocessing import PreProcessing
+from GuitarFX.models.svm import train_svm, get_features
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
@@ -9,43 +10,36 @@ import numpy as np
 
 if __name__ == '__main__':
     """
-    Code to run the baseline model. Will be moved to other part of code later.
+    Run the competitive baseline SVM model using mean audio features.
     """
-    pre_processing = PreProcessing(['datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon',
-                                    'datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2'])
+    dataset_paths = [
+        r'datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon',
+        r'datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2'
+    ]
     
-    # X, y, feature_names, label_names = pre_processing.execute_mean_features()
+    pre_processing = PreProcessing(dataset_paths)
 
-    df = pd.read_csv("guitar_monophon_mean_features.csv")
+    # Set read_csv=False if you want to re-extract features
+    X, y, feature_names, label_names = get_features(
+        dataset_paths=pre_processing.dataset_paths,
+        read_csv=True,  # Change to False to extract and save again
+        csv_path="guitar_monophon_mean_features.csv"
+    )
 
-    X = df.iloc[:, :-1]
-    y = df.iloc[:, -1]
-    # df = pd.DataFrame(X, columns=feature_names)
-    # df['label'] = y
-    # df.to_csv('guitar_monophon_mean_features.csv', index=False)
     X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(X, y)
 
     scaler = StandardScaler()
     X_train_val = scaler.fit_transform(X_train_val)
     X_test = scaler.transform(X_test)
 
-    # param_grid = {
-    #     'C': [0.1, 1, 10, 50, 100],
-    #     'gamma': [0.0001, 0.001, 0.01, 0.1, 1],
-    #     'kernel': ['rbf']
-    # }
-
-    # support_vector_machine = SVC()
-
-    # grid = GridSearchCV(support_vector_machine, param_grid, cv=5, scoring='accuracy', verbose=0, n_jobs=-1)
-    # grid.fit(X_train_val, y_train_val)
-
-    # print(grid.best_params_)
-    # print(grid.best_score_)
-
-    support_vector_machine = SVC(kernel='rbf', C=100, gamma=0.01)
-    support_vector_machine.fit(X_train_val, y_train_val)
-    y_pred = support_vector_machine.predict(X_test)
-    test_acc = accuracy_score(y_test, y_pred)
+    test_acc = train_svm(
+        X_train=X_train_val,
+        y_train=y_train_val,
+        X_test=X_test,
+        y_test=y_test,
+        kernel='rbf',
+        C=100,
+        gamma=0.01
+    )
 
     print(f"Test set accuracy: {test_acc:.4f}")
