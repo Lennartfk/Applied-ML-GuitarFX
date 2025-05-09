@@ -13,8 +13,8 @@ if __name__ == '__main__':
     Run the competitive baseline SVM model using mean audio features.
     """
     dataset_paths = [
-        r'datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon',
-        r'datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2'
+        r'C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon\Gitarre monophon\Samples',
+        r'C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2\Gitarre monophon2\Samples'
     ]
     
     pre_processing = PreProcessing(dataset_paths)
@@ -22,8 +22,8 @@ if __name__ == '__main__':
     # Set read_csv=False if you want to re-extract features
     X, y, feature_names, label_names = get_features(
         dataset_paths=pre_processing.dataset_paths,
-        read_csv=True,  # Change to False to extract and save again
-        csv_path="guitar_monophon_mean_features.csv"
+        read_csv=False,  # Change to False to extract and save again
+        csv_path="new_guitar_monophon_mean_features.csv"
     )
 
     X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(X, y)

@@ -2,6 +2,8 @@ import librosa
 import numpy as np    
 from GuitarFX.data.preprocessing import PreProcessing
 import os
+import glob
+from tqdm import tqdm
 
 class FeatureExtractor(PreProcessing):
 	"""Handle the feature extraction from the audio dataset."""
@@ -42,9 +44,9 @@ class FeatureExtractor(PreProcessing):
 
 		return features
 
-	def execute_mean_features(self, max_samples_per_classifier = None):
+	def execute_mean_features(self, max_samples_per_classifier=None):
 		"""
-		Extract the mean features for each file in dataset
+		Extract the mean features for each file in dataset.
 
 		Inputs:
 			max_samples_per_classifier (int): Limit the sample amount per
@@ -56,35 +58,40 @@ class FeatureExtractor(PreProcessing):
 		X = []
 		y = []
 
-		total_files = 20592
-		current_number_file = 0
+		effect_labels = {
+			'11': 'No Effect',
+			'12': 'No Effect',
+			'21': 'Feedback Delay',
+			'22': 'Slapback Delay',
+			'23': 'Reverb',
+			'31': 'Chorus',
+			'32': 'Flanger',
+			'33': 'Phaser',
+			'34': 'Tremolo',
+			'35': 'Vibrato',
+			'41': 'Distortion',
+			'42': 'Overdrive'
+		}
 
+		processed_files = 0
 		for dataset_path in self.dataset_paths:
-			label_dicts = os.listdir(dataset_path)
-			label_names.extend(label_dicts)
+			wav_files = glob.glob(os.path.join(dataset_path, "*", "*.wav"))
 
-			for label_dict in label_dicts:
-				label_dict_path = os.path.join(dataset_path, label_dict)
+			for wav_file_path in tqdm(wav_files, desc="Processing audiofiles"):
+				if max_samples_per_classifier is not None and processed_files >= max_samples_per_classifier:
+					break
+				file_name = os.path.basename(wav_file_path)
+				effect_code = file_name.split('-')[2][1:3]
+				effect_label = effect_labels.get(effect_code, 'Unknown')
+				label_names.append(effect_label)
 
-				for wav_file in os.listdir(label_dict_path):
-					current_number_file += 1
-					try:
-						wav_file_path = os.path.join(label_dict_path, wav_file)
+				signal, sr = self.signal_processing(wav_file_path)
+				features = self.extract_mean_features(signal, sr)
 
-						signal, sr = self.signal_processing(wav_file_path)
-						features = self.extract_mean_features(signal, sr)
+				X.append(features)
+				y.append(effect_label)
 
-						X.append(features)
-						y.append(label_dict)
-
-					except Exception as e:
-						print("Couldn't load file.")
-
-					print(f"Processed file ({current_number_file}/{total_files})")
-
-					if max_samples_per_classifier is not None:
-						if current_number_file % max_samples_per_classifier == 0:
-							break
+				processed_files += 1
 
 		X = np.array(X)
 		y = np.array(y)
