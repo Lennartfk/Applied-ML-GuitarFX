@@ -1,7 +1,8 @@
 from GuitarFX.data.preprocessing import PreProcessing
-from GuitarFX.models.svm import train_svm, get_features
-from sklearn.preprocessing import StandardScaler
+from GuitarFX.models.svm import CustomSVM, get_features
+from GuitarFX.metrics.metrics import ModelMetrics
 
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 if __name__ == "__main__":
     """
@@ -25,9 +26,12 @@ if __name__ == "__main__":
     # Set read_csv=False if you want to re-extract features
     X, y, feature_names, label_names = get_features(
         dataset_paths=pre_processing.dataset_paths,
-        read_csv=False,  # Change to False to extract and save again
-        csv_path="new_guitar_monophon_mean_features.csv",
+        read_csv=True,  # Change to False to extract and save again
+        csv_path="data/guitar_monophon_mean_features.csv",
     )
+
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit(y)
 
     X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(
         X, y
@@ -37,14 +41,19 @@ if __name__ == "__main__":
     X_train_val = scaler.fit_transform(X_train_val)
     X_test = scaler.transform(X_test)
 
-    test_acc = train_svm(
-        X_train=X_train_val,
-        y_train=y_train_val,
-        X_test=X_test,
-        y_test=y_test,
-        kernel="rbf",
-        C=100,
-        gamma=0.01,
-    )
+    y_train_val_encoded = label_encoder.transform(y_train_val)
+    y_test_encoded = label_encoder.transform(y_test)
 
-    print(f"Test set accuracy: {test_acc:.4f}")
+    # The hyper-parameters were decided by the use of a grid search using the
+    # training data for fitting the parameters and validation for evaluating
+    # each combination.
+    svm = CustomSVM(C=100, kernel="rbf", gamma=0.01)
+    svm = svm.fit(X_train_val, y_train_val_encoded)
+    y_pred_proba = svm.predict_proba(X_test)
+
+    svm_metrics = ModelMetrics(
+        y_pred=y_pred_proba,
+        y_actual=y_test_encoded,
+        label_encoder=label_encoder
+    )
+    svm_metrics.report_all_results()
