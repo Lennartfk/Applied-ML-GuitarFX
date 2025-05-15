@@ -25,8 +25,8 @@ class PreProcessing:
         """
         Pre-process the audio signal.
         """
-        # Get the audio signal, resample at 44.1kHz and switch any potential multi
-        # channel audio signal to a mono channel
+        # Get the audio signal, resample at 44.1kHz and switch any potential
+        # multi channel audio signal to a mono channel
         y, sr = librosa.load(file_path, sr=44100, mono=True)
 
         # Trim leading and trailing silence
