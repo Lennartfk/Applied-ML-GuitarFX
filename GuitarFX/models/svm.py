@@ -1,7 +1,8 @@
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
-import pandas as pd
 from GuitarFX.features.baseline_features import FeatureExtractor
+
+from sklearn.svm import SVC
+from sklearn.base import BaseEstimator, ClassifierMixin
+import pandas as pd
 
 
 def get_features(
@@ -40,32 +41,26 @@ def get_features(
     return X, y, feature_names, label_names
 
 
-def train_svm(X_train, y_train, X_test, y_test, kernel="rbf", C=1, gamma="scale"):
-    """
-    Trains SVM classifier on training data and evaluate on test data.
+class CustomSVM(BaseEstimator, ClassifierMixin):
+    def __init__(self, C=1.0, kernel="rbf", gamma="scale"):
+        self.C = C
+        self.kernel = kernel
+        self.gamma = gamma
 
-    Parameters:
-        X_train (numpy.ndarray): Training features.
-        y_train (numpy.ndarray): Training labels.
-        X_test (numpy.ndarray): Test features.
-        y_test (numpy.ndarray): Test labels.
-        kernel (str): SVM kernel type (default is 'rbf').
-        C (float): Regularization parameter.
-        gamma (str): Kernel coefficient.
+    def fit(self, X, y):
+        self.model_ = SVC(C=self.C, kernel=self.kernel, gamma=self.gamma,
+                          probability=True)
+        self.model_.fit(X, y)
+        return self
 
-    Returns:
-        float: Test set accuracy.
-    """
-    # Create the model
-    model = SVC(kernel=kernel, C=C, gamma=gamma)
+    def predict(self, X):
+        return self.model_.predict(X)
 
-    # Train the model
-    model.fit(X_train, y_train)
+    def predict_proba(self, X):
+        return self.model_.predict_proba(X)
 
-    # Predict on the test set
-    y_pred = model.predict(X_test)
+    def save(self):
+        pass
 
-    # Calculate accuracy
-    test_acc = accuracy_score(y_test, y_pred)
-
-    return test_acc
+    def load(self):
+        pass
