@@ -7,3 +7,5 @@ venv/
 datasets/
 notes.txt
 .vscode/
+pyproject.toml
+.flake8

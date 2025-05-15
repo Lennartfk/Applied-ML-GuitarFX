@@ -1,5 +1,4 @@
 from typing import List
-import numpy as np
 import librosa
 from sklearn.model_selection import KFold, train_test_split
 
@@ -10,6 +9,7 @@ class PreProcessing:
     pre-processing of guitar effect classification. However, this can be
     extended to other audio-related classification tasks.
     """
+
     def __init__(self, dataset_paths: List[str] | str) -> None:
         """
         Inputs:
@@ -25,7 +25,8 @@ class PreProcessing:
         """
         Pre-process the audio signal.
         """
-        # Get the audio signal, resample at 44.1kHz and switch any potential multi channel audio signal to a mono channel
+        # Get the audio signal, resample at 44.1kHz and switch any potential multi
+        # channel audio signal to a mono channel
         y, sr = librosa.load(file_path, sr=44100, mono=True)
 
         # Trim leading and trailing silence
@@ -45,11 +46,7 @@ class PreProcessing:
         k-fold cross-valiation.
         """
         X_train_val, X_test, y_train_val, y_test = train_test_split(
-            features,
-            labels,
-            test_size=0.1,
-            train_size=0.9,
-            random_state=42
+            features, labels, test_size=0.1, train_size=0.9, random_state=42
         )
 
         kf = KFold(n_splits=5)
@@ -58,19 +55,13 @@ class PreProcessing:
         return X_train_val, X_test, y_train_val, y_test, folds
 
     def data_augmentation(self, data):
-        """
-        """
+        """ """
         pass
 
     def data_saving(self, dataframe):
-        """
-        """
+        """ """
         pass
 
     def data_cleaning(self, data):
-        """
-        """
+        """ """
         pass
-
-
-        
