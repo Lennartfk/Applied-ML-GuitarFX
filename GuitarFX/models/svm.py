@@ -16,9 +16,11 @@ def get_features(
 
     Args:
         dataset_paths (list): Paths to dataset directories.
-        read_csv (bool): If True, load features from CSV. If False, extract them.
+        read_csv (bool): If True, load features from CSV. If False, extract
+        them.
         csv_path (str): Path to the CSV file to load/save.
-        max_samples_per_classifier (int): Optional limit for sample count per class.
+        max_samples_per_classifier (int): Optional limit for sample count per
+        class.
 
     Returns:
         tuple: (X, y, feature_names, label_names)
