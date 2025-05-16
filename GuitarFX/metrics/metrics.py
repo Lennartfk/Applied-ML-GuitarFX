@@ -50,6 +50,7 @@ class ModelMetrics:
         self.val_accuracy = val_accuracy
         self.train_loss = train_loss
         self.val_loss = val_loss
+        self._cm = None
 
     def train_val_loss_accuracy_curves(self) -> None:
         """
@@ -80,13 +81,22 @@ class ModelMetrics:
         plt.tight_layout()
         plt.show()
 
+    def _compute_confusion_matrix(self):
+        y_pred_numeric = np.argmax(self.y_pred, axis=1)
+        self._cm = confusion_matrix(self.y_actual, y_pred_numeric)
+
+    @property
+    def confusion_matrix_array(self):
+        if self._cm is None:
+            self._compute_confusion_matrix()
+        return self._cm
+
     def confusion_matrix(self) -> None:
         """
         Creates a (C x C) confusion_matrix from sklearn. Then plots
         a heathmap of the confusion matrix using matplotlib and seaborn.
         """
-        y_pred_numeric = np.argmax(self.y_pred, axis=1)
-        cm = confusion_matrix(self.y_actual, y_pred_numeric)
+        cm = self.confusion_matrix_array
 
         plt.figure(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
@@ -96,6 +106,25 @@ class ModelMetrics:
         plt.title("Confusion Matrix")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")
+        plt.show()
+
+    def plot_per_class_accuracy(self) -> None:
+        cm = self.confusion_matrix_array
+        per_class_acc = cm.diagonal() / cm.sum(axis=1)
+        classes = np.array(self.label_encoder.classes_)
+
+        sorted_indices = np.argsort(per_class_acc)[::-1]
+        sorted_acc = per_class_acc[sorted_indices]
+        sorted_classes = classes[sorted_indices]
+
+        plt.figure(figsize=(10 ,6))
+        sns.barplot(x=sorted_acc, y=sorted_classes, palette="viridis")
+        plt.xlim(0 ,1)
+        plt.xlabel("Accuracy")
+        plt.ylabel("Class")
+        plt.title("Per-Class Accuracy")
+        plt.grid(axis="x", linestyle="--", alpha=0.7)
+        plt.tight_layout()
         plt.show()
 
     def classification_metric(self):
@@ -145,5 +174,7 @@ class ModelMetrics:
             self.train_val_loss_accuracy_curves()
 
         self.confusion_matrix()
+
+        self.plot_per_class_accuracy()
 
         self.classification_metric()
