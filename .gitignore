@@ -9,3 +9,4 @@ notes.txt
 .vscode/
 pyproject.toml
 .flake8
+data/

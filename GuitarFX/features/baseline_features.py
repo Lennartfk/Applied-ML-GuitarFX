@@ -1,6 +1,7 @@
 import librosa
 import numpy as np
 from GuitarFX.data.preprocessing import PreProcessing
+from GuitarFX.data.loading import get_wav_files, extract_label_from_filename
 import os
 import glob
 from tqdm import tqdm
@@ -103,43 +104,18 @@ class FeatureExtractor(PreProcessing):
         X = []
         y = []
 
-        effect_labels = {
-            "11": "No Effect",
-            "12": "No Effect",
-            "21": "Feedback Delay",
-            "22": "Slapback Delay",
-            "23": "Reverb",
-            "31": "Chorus",
-            "32": "Flanger",
-            "33": "Phaser",
-            "34": "Tremolo",
-            "35": "Vibrato",
-            "41": "Distortion",
-            "42": "Overdrive",
-        }
+        wav_files = get_wav_files(self.dataset_paths, max_files=max_samples_per_classifier)
 
-        processed_files = 0
-        for dataset_path in self.dataset_paths:
-            wav_files = glob.glob(os.path.join(dataset_path, "*", "*.wav"))
+        for wav_file_path in tqdm(wav_files, desc="Processing audiofiles"):
+            file_name = os.path.basename(wav_file_path)
+            effect_label = extract_label_from_filename(file_name)
+            label_names.append(effect_label)
 
-            for wav_file_path in tqdm(wav_files, desc="Processing audiofiles"):
-                if (
-                    max_samples_per_classifier is not None
-                    and processed_files >= max_samples_per_classifier
-                ):
-                    break
-                file_name = os.path.basename(wav_file_path)
-                effect_code = file_name.split("-")[2][1:3]
-                effect_label = effect_labels.get(effect_code, "Unknown")
-                label_names.append(effect_label)
+            signal, sr = self.signal_processing(wav_file_path)
+            features = self.extract_mean_features(signal, sr)
 
-                signal, sr = self.signal_processing(wav_file_path)
-                features = self.extract_mean_features(signal, sr)
-
-                X.append(features)
-                y.append(effect_label)
-
-                processed_files += 1
+            X.append(features)
+            y.append(effect_label)
 
         X = np.array(X)
         y = np.array(y)

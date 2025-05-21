@@ -30,7 +30,7 @@ class PreProcessing:
         y, sr = librosa.load(file_path, sr=44100, mono=True)
 
         # Trim leading and trailing silence
-        y_trimmed, _ = librosa.effects.trim(y)
+        y_trimmed, _ = librosa.effects.trim(y, top_db=30)
 
         return y_trimmed, sr
 
