@@ -1,6 +1,7 @@
 from GuitarFX.data.preprocessing import PreProcessing
 from GuitarFX.models.svm import CustomSVM, get_features
 from GuitarFX.metrics.metrics import ModelMetrics
+from GuitarFX.io.model_io import save_model, load_model
 
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
@@ -57,3 +58,5 @@ if __name__ == "__main__":
         label_encoder=label_encoder
     )
     svm_metrics.report_all_results()
+
+    save_model(svm, scaler, label_encoder)
