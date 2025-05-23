@@ -27,6 +27,9 @@ class CNNFeatureExtractor(PreProcessing):
         else:
             mel_spec_db = mel_spec_db[:, :128]
 
+        mel_spec_db -= mel_spec_db.min()
+        mel_spec_db /= mel_spec_db.max() + 1e-8
+
         return mel_spec_db
 
 

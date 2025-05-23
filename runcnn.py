@@ -8,11 +8,8 @@ from GuitarFX.features.cnn_features import CNNFeatureExtractor
 from GuitarFX.models.Guitar2dCNN import build_guitar_effect_cnn
 from GuitarFX.metrics.metrics import ModelMetrics
 
-# more memory efficient
-mixed_precision.set_global_policy('mixed_float16')
 
 def main():
-    # Paths to your dataset folders, e.g. ["data/train", "data/val"]
     dataset_paths = [
         r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon\Gitarre monophon\Samples",
         r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2\Gitarre monophon2\Samples",
@@ -22,7 +19,7 @@ def main():
 
     # Feature extraction
     extractor = CNNFeatureExtractor(dataset_paths)
-    X, y, label_names = extractor.get_cnn_features(read_file=True, filename="cnn_mels_trimmed.npz")  # load cached if exists
+    X, y, label_names = extractor.get_cnn_features(read_file=True, filename="cnn_scaled.npz")  # load cached if exists
 
     # Encode string labels to integers
     label_encoder = LabelEncoder()
@@ -35,24 +32,24 @@ def main():
         X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded,
     )
     X_train, X_val, y_train, y_val = train_test_split(
-        X_train_full, y_train_full, test_size=0.25, random_state=42, stratify=y_train_full # This would make X_val 20% of total
+        X_train_full, y_train_full, test_size=0.25, random_state=42, stratify=y_train_full 
     )
 
     num_classes = len(label_encoder.classes_)
 
-    # Build CNN model
+    # Build model
     model = build_guitar_effect_cnn(num_classes=num_classes, input_shape=X_train.shape[1:])
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
 
-    # Train model with validation split from training data
+    # Train model
     history = model.fit(
         X_train, y_train,
         epochs=30,
-        batch_size=32,
+        batch_size=16,
         validation_data=(X_val, y_val),
         verbose=2
     )
@@ -61,7 +58,7 @@ def main():
     y_pred_probs = model.predict(X_test)
     y_pred = np.argmax(y_pred_probs, axis=1)
 
-    # Evaluate metrics
+    # metrics
     metrics = ModelMetrics(
         y_pred=y_pred_probs,
         y_actual=y_test,
