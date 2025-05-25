@@ -8,6 +8,6 @@ datasets/
 notes.txt
 .vscode/
 pyproject.toml
-.flake8data/
+.flake8
 /data/
 !GuitarFX/data/
