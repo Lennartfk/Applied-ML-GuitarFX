@@ -40,7 +40,7 @@ def main():
     # Build model
     model = build_guitar_effect_cnn(num_classes=num_classes, input_shape=X_train.shape[1:])
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=tf.keras.optimizers.experimental.AdamW(learning_rate=0.0001),
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
