@@ -70,5 +70,8 @@ def main():
     )
     metrics.report_all_results()
 
+    model.save("GuitarCNN")
+
+
 if __name__ == "__main__":
     main()

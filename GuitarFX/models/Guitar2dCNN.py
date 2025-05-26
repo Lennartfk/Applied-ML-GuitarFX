@@ -4,7 +4,7 @@ from GuitarFX.features.baseline_features import FeatureExtractor
 
 # Define parameters
 INPUT_HEIGHT = 128   # number of mel bands
-INPUT_WIDTH =  128  # number of time frames
+INPUT_WIDTH = 128  # number of time frames
 INPUT_CHANNELS = 1   # mel-spectrogram channels
 
 # 2D CNN model
