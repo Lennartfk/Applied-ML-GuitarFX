@@ -108,14 +108,17 @@ async def predict_cnn(audio_files: UploadFile | List[UploadFile] = File(...)):
     X = []
     files_names = []
 
-    for audio_file in audio_files:
-        preprocessor = CNNFeatureExtractor(dataset_paths=None)
-        bytes = await audio_file.read()
+    try:
+        for audio_file in audio_files:
+            preprocessor = CNNFeatureExtractor(dataset_paths=None)
+            bytes = await audio_file.read()
 
-        mel_spec = preprocessor.extract_mel_for_prediction(bytes)
+            mel_spec = preprocessor.extract_mel_for_prediction(bytes)
 
-        X.append(mel_spec)
-        files_names.append(audio_file.filename)
+            X.append(mel_spec)
+            files_names.append(audio_file.filename)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing files: {e}")
 
     predictions = model.predict(X)
 
