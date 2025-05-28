@@ -14,6 +14,7 @@ from ..features.cnn_features import CNNFeatureExtractor
 
 from typing import List
 
+import numpy as np
 from pydantic import BaseModel
 from tensorflow.keras.models import load_model
 from starlette.responses import RedirectResponse
@@ -91,7 +92,7 @@ async def root():
     spectograms, then predicting the confidence scores for each pre-defined
     guitar effect using a 2-dimensional CNN.
 
-    Add {'audio_file': audio_file} to send request. Add multiple bodies to
+    Add {'audio_files': audio_file} to send request. Add multiple bodies to
     predict for multiple audio files.
     """,
     response_model=EffectPredictionResponse,
@@ -119,6 +120,10 @@ async def predict_cnn(audio_files: UploadFile | List[UploadFile] = File(...)):
             files_names.append(audio_file.filename)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing files: {e}")
+
+    X = [np.squeeze(x) for x in X]
+    X = [np.expand_dims(x, axis=-1) for x in X]
+    X = np.stack(X)
 
     predictions = model.predict(X)
 
