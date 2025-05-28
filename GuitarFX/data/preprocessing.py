@@ -1,7 +1,8 @@
 from typing import List
 import librosa
 from sklearn.model_selection import KFold, train_test_split
-
+import io
+import soundfile as sf
 
 class PreProcessing:
     """
@@ -19,7 +20,8 @@ class PreProcessing:
             classifier as its name and the children of those dictonaries
             contain the audio files being part of that classification group.
         """
-        self.dataset_paths = list(dataset_paths)
+        if dataset_paths is not None:
+            self.dataset_paths = list(dataset_paths)
 
     def signal_processing(self, file_path):
         """
@@ -33,6 +35,22 @@ class PreProcessing:
         y_trimmed, _ = librosa.effects.trim(y, top_db=30)
 
         return y_trimmed, sr
+
+    def signal_processing_bytes(self, bytes):
+        # Get the audio signal at (samples, channel)
+        data, sr = sf.read(io.BytesIO(bytes))
+
+        # Convert to mono channel
+        y = librosa.to_mono(data.T)
+
+        # resample at 44.1kHz
+        new_sr = 44100
+        y = librosa.resample(y, orig_sr=sr, target_sr=new_sr)
+
+        # Trim leading and trailing silence
+        y_trimmed, _ = librosa.effects.trim(y, top_db=30)
+
+        return y_trimmed, new_sr
 
     def extract_signal_representations(self, y, sr):
         """

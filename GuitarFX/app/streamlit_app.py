@@ -31,4 +31,3 @@ if uploaded_file is not None:
 
     st.write("### Prediction:", pred_label[0])
     st.write("### Probabilities:", dict(zip(label_encoder.classes_, probs[0])))
-

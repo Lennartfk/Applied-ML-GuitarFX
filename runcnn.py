@@ -3,18 +3,17 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
+from tensorflow.keras.models import load_model
 
 from GuitarFX.features.cnn_features import CNNFeatureExtractor
-from GuitarFX.models.Guitar2dCNN import build_guitar_effect_cnn
+from GuitarFX.models.Guitar2dCNN import GuitarEffectCNN
 from GuitarFX.metrics.metrics import ModelMetrics
 
 
 def main():
     dataset_paths = [
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon\Gitarre monophon\Samples",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2\Gitarre monophon2\Samples",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon\Gitarre polyphon\Samples",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon2\Gitarre polyphon2"
+        r"C:\Users\daan3\OneDrive\Documenten\repos\Applied-ML-GuitarFX\datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon",
+        r"C:\Users\daan3\OneDrive\Documenten\repos\Applied-ML-GuitarFX\datasets\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2"
     ]
 
     # Feature extraction
@@ -32,26 +31,20 @@ def main():
         X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded,
     )
     X_train, X_val, y_train, y_val = train_test_split(
-        X_train_full, y_train_full, test_size=0.25, random_state=42, stratify=y_train_full 
+        X_train_full, y_train_full, test_size=0.25, random_state=42, stratify=y_train_full
     )
-
+    print(label_encoder.classes_)
     num_classes = len(label_encoder.classes_)
 
     # Build model
-    model = build_guitar_effect_cnn(num_classes=num_classes, input_shape=X_train.shape[1:])
-    model.compile(
-        optimizer=tf.keras.optimizers.experimental.AdamW(learning_rate=0.0001),
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
+    model = GuitarEffectCNN(num_classes=num_classes)
 
     # Train model
-    history = model.fit(
-        X_train, y_train,
-        epochs=30,
-        batch_size=16,
-        validation_data=(X_val, y_val),
-        verbose=2
+    history = model.train(
+        train_dataset=(X_train, y_train),
+        val_dataset=(X_val, y_val),
+        epochs=1,
+        learning_rate=0.0001
     )
 
     # Predict on test set
@@ -70,7 +63,7 @@ def main():
     )
     metrics.report_all_results()
 
-    model.save("GuitarCNN")
+    model.save("models/guitar_effect_cnn.h5")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import requests
 
-url = "http://localhost:8000/models/svm"
+url = "http://localhost:8000/predict"
 
 response = requests.post(url)
 

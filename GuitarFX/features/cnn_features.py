@@ -1,9 +1,10 @@
 import librosa
 import numpy as np
-from GuitarFX.data.preprocessing import PreProcessing
-from GuitarFX.data.loading import extract_label_from_filename, get_wav_files
+from ..data.preprocessing import PreProcessing
+from ..data.loading import extract_label_from_filename, get_wav_files
 import os
 from tqdm import tqdm
+
 
 class CNNFeatureExtractor(PreProcessing):
     """Extract 2d mel spectrogram features for CNN input."""
@@ -31,7 +32,6 @@ class CNNFeatureExtractor(PreProcessing):
         mel_spec_db /= mel_spec_db.max() + 1e-8
 
         return mel_spec_db
-
 
     def _execute_mel_spectrograms(self, max_samples_per_classifier=None):
         """Extract 2D mel spectrograms for each file in dataset."""
@@ -64,7 +64,6 @@ class CNNFeatureExtractor(PreProcessing):
         np.savez(path, X=X, y=y, label_names=label_names)
         print(f"Features saved to {path}")
 
-
     def load_features(self, filename="features.npz"):
         path = os.path.join("data", filename)
         if not os.path.exists(path):
@@ -72,7 +71,7 @@ class CNNFeatureExtractor(PreProcessing):
         data = np.load(path, allow_pickle=True)
         X = data["X"]
         y = data["y"]
-        label_names = data["label_names"].tolist() 
+        label_names = data["label_names"].tolist()
         print(f"Features loaded from {path}")
         return X, y, label_names
 
@@ -99,3 +98,12 @@ class CNNFeatureExtractor(PreProcessing):
         X, y, label_names = self._execute_mel_spectrograms(max_samples_per_classifier=max_samples_per_classifier)
         self.save_features(X, y, label_names, filename)
         return X, y, label_names
+
+    def extract_mel_for_prediction(self, bytes):
+        """Extract a single mel spectrogram ready for CNN prediction."""
+        signal, sr = self.signal_processing_bytes(bytes)
+        mel_spec = self._extract_mel(signal, sr)
+        mel_spec = np.expand_dims(mel_spec, axis=-1)
+        mel_spec = np.expand_dims(mel_spec, axis=0)
+
+        return mel_spec
