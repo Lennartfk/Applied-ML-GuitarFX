@@ -1,7 +1,7 @@
 """
 deployment.py
 
-Run "fastapi dev fastapi dev .\GuitarFX\api\api.py in your terminal to start a
+Run "fastapi dev .\GuitarFX\api\api.py in your terminal to start a
 local API server at 127.0.0.1:8000. Ensure that a Keras model is saved in the
 models/ directory. If you have your own trained CNN model, update the
 model_path variable to point to it. Ensure you have installed fastapi by
