@@ -12,17 +12,18 @@ curl -X POST "http://127.0.0.1:8000/predict" -F "audio_files=@\"C:/Users/daan3/O
 """
 from ..features.cnn_features import CNNFeatureExtractor
 
-from typing import List
+from typing import List, Union
 
 import numpy as np
 from pydantic import BaseModel
 from tensorflow.keras.models import load_model
+import tensorflow_addons as tfa
 from starlette.responses import RedirectResponse
 from fastapi import FastAPI, UploadFile, HTTPException, File
 
-model_path = "models/guitar_effect_cnn_1_epoch.h5"
+model_path = "models\guitar_effect_cnn.h5"
 try:
-    model = load_model(model_path)
+    model = load_model(model_path, custom_objects={"AdamW": tfa.optimizers.AdamW})
 except OSError:
     raise RuntimeError(f"Failed to load model from {model_path}")
 
@@ -102,7 +103,7 @@ async def root():
     confidence).
     """
 )
-async def predict_cnn(audio_files: UploadFile | List[UploadFile] = File(...)):
+async def predict_cnn(audio_files: Union[UploadFile, List[UploadFile]] = File(...)):
     if isinstance(audio_files, UploadFile):
         audio_files = [audio_files]
 

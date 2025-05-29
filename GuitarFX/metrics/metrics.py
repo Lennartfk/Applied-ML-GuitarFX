@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Union
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 
 class ModelMetrics:
@@ -138,6 +139,9 @@ class ModelMetrics:
             self.y_actual
         )
         y_decoded_pred = self.label_encoder.inverse_transform(y_pred_numeric)
+
+        overall_acc = accuracy_score(self.y_actual, y_pred_numeric)
+        print(f"Overall accuracy: {overall_acc * 100:.2f}%\n")
 
         print(classification_report(y_decoded_actual, y_decoded_pred))
 

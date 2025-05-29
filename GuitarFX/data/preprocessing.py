@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import librosa
 from sklearn.model_selection import KFold, train_test_split
 import io
@@ -11,7 +11,7 @@ class PreProcessing:
     extended to other audio-related classification tasks.
     """
 
-    def __init__(self, dataset_paths: List[str] | str) -> None:
+    def __init__(self, dataset_paths: Union[List[str], str]) -> None:
         """
         Inputs:
             dataset_paths (List[str | str]): List of paths or a singular path
