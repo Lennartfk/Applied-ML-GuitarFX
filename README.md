@@ -14,7 +14,7 @@ cd Applied-ML-GuitarFX
 ### 2. Install depencies
 We recommend using python 3.9.21, so if you use conda execute the following commands:
 
-conda create -n guitarfx
+conda create -n guitarfx python=3.9.21
 conda activate guitarfx
 pip install -r requirements.txt
 
