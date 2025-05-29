@@ -33,7 +33,7 @@ fastapi dev .\GuitarFX\api\api.py
 
 This will start a server at: `http://127.0.0.1:8000`
 
-API documentation (Swagger UI) is available at:  
+API documentation is available at:  
 `http://127.0.0.1:8000/docs`
 
 ---
