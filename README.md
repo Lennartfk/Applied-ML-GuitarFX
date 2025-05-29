@@ -12,8 +12,9 @@ git clone https://github.com/Lennartfk/Applied-ML-GuitarFX
 cd Applied-ML-GuitarFX
 
 ### 2. Install depencies
-Use python 3.8+
+We recommend using python 3.9.21, so if you use conda execute the following commands:
 
+conda create -n guitarfx-test
 pip install -r requirements.txt
 
 ### 3. Running the API
