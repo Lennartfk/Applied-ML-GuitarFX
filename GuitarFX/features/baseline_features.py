@@ -3,7 +3,6 @@ import numpy as np
 from GuitarFX.data.preprocessing import PreProcessing
 from GuitarFX.data.loading import get_wav_files, extract_label_from_filename
 import os
-import glob
 from tqdm import tqdm
 
 
