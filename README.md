@@ -11,7 +11,7 @@ This project implements a CNN model to classify guitar audio effect using melspe
 git clone https://github.com/Lennartfk/Applied-ML-GuitarFX
 cd Applied-ML-GuitarFX
 
-### 2. Install depencies
+### 2. Install dependencies
 Use python 3.8+
 
 pip install -r requirements.txt
