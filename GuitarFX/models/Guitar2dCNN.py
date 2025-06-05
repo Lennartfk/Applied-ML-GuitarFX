@@ -5,7 +5,8 @@ from tensorflow.keras.callbacks import Callback
 from typing import Optional, List
 import pickle
 import os
-import kerastuner as kt  # make sure kerastuner is installed
+import kerastuner as kt
+import numpy as np
 
 class GuitarEffectCNN:
     def __init__(self, num_classes, input_shape=(128, 128, 1), label_smoothing=0.1):
@@ -86,8 +87,6 @@ class GuitarEffectCNN:
         """
         if self.model is None:
             self.model = self.build_model()
-        # Update optimizer learning rate if specified and no tuner was used
-        tf.keras.backend.set_value(self.model.optimizer.learning_rate, lr)
 
         self.history = self.model.fit(
             train_dataset[0], train_dataset[1],
@@ -131,23 +130,6 @@ class GuitarEffectCNN:
         self.best_hp = self.tuner.get_best_hyperparameters(num_trials=1)[0]
         print("Best hyperparameters:", self.best_hp.values)
 
-    def retrain_best(self, train_dataset, val_dataset=None, epochs=30, batch_size=64, callbacks=None):
-        """
-        Build model with best HP and retrain fully.
-        """
-        if self.best_hp is None:
-            raise ValueError("No best hyperparameters found. Run tuner search first.")
-        self.model = self.build_model(self.best_hp)
-
-        self.history = self.model.fit(
-            train_dataset[0], train_dataset[1],
-            validation_data=None if val_dataset is None else (val_dataset[0], val_dataset[1]),
-            epochs=epochs,
-            batch_size=batch_size,
-            callbacks=callbacks
-        )
-        return self.history
-
     def save(self, filepath):
         """
         Save the model and optionally the training history.
@@ -181,22 +163,6 @@ class GuitarEffectCNN:
         else:
             self.history = None
 
-        tuner_path = os.path.splitext(model_path)[0] + "_tuner.pkl"
-        if os.path.exists(tuner_path):
-            with open(tuner_path, "rb") as f:
-                best_hp_values = pickle.load(f)
-                if best_hp_values is not None:
-                    from kerastuner.engine.hyperparameters import HyperParameters
-                    hp = HyperParameters()
-                    for k, v in best_hp_values.items():
-                        # Note: This simple approach assumes values are scalar and can be assigned
-                        hp.values[k] = v
-                    self.best_hp = hp
-                else:
-                    self.best_hp = None
-        else:
-            self.best_hp = None
-
     def get_training_history(self):
         """
         Return the training history dictionary.
@@ -210,3 +176,18 @@ class GuitarEffectCNN:
         if self.model is None:
             raise ValueError("Model is not loaded or trained.")
         return self.model.predict(inputs)
+    
+    def get_features_with_filenames(self, read_file=False, filename="cnn_scaled_onehot.npz"):
+        wav_files = self.get_wav_files()
+        features = []
+        filenames = []
+
+        for wav_path in wav_files:
+            feature = self.extract_features_from_file(wav_path)
+            if feature is not None:
+                features.append(feature)
+                filenames.append(wav_path)
+
+        return np.array(features), filenames
+
+        
