@@ -2,8 +2,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
-import matplotlib.pyplot as plt
-import os
 
 from GuitarFX.features.cnn_features import CNNFeatureExtractor
 from GuitarFX.models.Guitar2dCNN import GuitarEffectCNN
@@ -27,8 +25,8 @@ def main():
     print(f"Labels shape: {y.shape}")
 
     # Train/test split (no stratify for multilabel)
-    X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=23)
-    X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.25, random_state=23)
+    X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.25, random_state=42)
 
     num_classes = y.shape[1]
 
@@ -46,13 +44,17 @@ def main():
         train_dataset=(X_train, y_train),
         val_dataset=(X_val, y_val),
         epochs=30,
-        learning_rate=0.001,
         batch_size=64,
+        lr=0.0001,
         callbacks=[early_stop]
     )
 
     # Save model and history
-    model.save("models/cnn_onehot_fixedlr.h5")
+    model.save("models/cnn_onehot_labelsmoothing.h5")
+
+    # ========= load model and history ==========
+    # model = GuitarEffectCNN(num_classes=num_classes)
+    # model.load("models/cnn_onehot_labelsmoothing.h5")
 
     # Predict and evaluate
     y_pred_probs = model.predict(X_test)

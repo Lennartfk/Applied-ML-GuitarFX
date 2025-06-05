@@ -60,3 +60,4 @@ def extract_multilabel_from_filename(filename):
             label_vector[effect_to_index[effect_name]] = 1.0
 
     return label_vector
+
