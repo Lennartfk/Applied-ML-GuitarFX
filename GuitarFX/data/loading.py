@@ -61,3 +61,5 @@ def extract_multilabel_from_filename(filename):
 
     return label_vector
 
+print(extract_multilabel_from_filename("G61-40100-1211-20593-41"))
+
