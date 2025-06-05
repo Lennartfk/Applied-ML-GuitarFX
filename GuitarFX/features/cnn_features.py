@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 from ..data.preprocessing import PreProcessing
-from ..data.loading import extract_label_from_filename, get_wav_files
+from ..data.loading import extract_multilabel_from_filename, get_wav_files
 import os
 from tqdm import tqdm
 
@@ -14,6 +14,10 @@ class CNNFeatureExtractor(PreProcessing):
         self.n_mels = n_mels
         self.hop_length = hop_length
         self.cache_dir = cache_dir
+        self.class_names = [
+            "Feedback Delay", "Slapback Delay", "Reverb", "Chorus", "Flanger",
+            "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive", "No Effect"
+        ]
 
     def _extract_mel(self, y, sr):
         """Extract mel spectrogram with fixed width (128 time frames)."""
@@ -44,8 +48,7 @@ class CNNFeatureExtractor(PreProcessing):
 
         for wav_file_path in tqdm(wav_files, desc="Processing mel spectrograms"):
             file_name = os.path.basename(wav_file_path)
-            effect_label = extract_label_from_filename(file_name)
-            label_names.append(effect_label)
+            effect_label = extract_multilabel_from_filename(file_name)
 
             signal, sr = self.signal_processing(wav_file_path)
             mel_spec = self._extract_mel(signal, sr)
@@ -55,6 +58,8 @@ class CNNFeatureExtractor(PreProcessing):
 
         X = np.array(X)
         y = np.array(y)
+
+        label_names = self.class_names
 
         return X, y, label_names
 
@@ -73,6 +78,7 @@ class CNNFeatureExtractor(PreProcessing):
         y = data["y"]
         label_names = data["label_names"].tolist()
         print(f"Features loaded from {path}")
+        print(label_names[0:10])
         return X, y, label_names
 
     def get_cnn_features(self, max_samples_per_classifier=None, read_file=True, filename="features.npz"):
