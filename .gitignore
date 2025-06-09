@@ -12,3 +12,4 @@ pyproject.toml
 data/
 !GuitarFX/data/
 kt_dir/guitarfx_tuning/
+test.py

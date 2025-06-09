@@ -1,23 +1,24 @@
-import os
+from GuitarFX.features.cnn_features import CNNFeatureExtractor
+from tensorflow.keras.models import load_model
+import numpy as np
+import tensorflow_addons as tfa
+from tensorflow.keras.metrics import AUC, Precision, Recall
 
-folder_path = r"C:\Users\lenna\Documents\Coding_Projects\multi_effect\overdrive_reverb"  # CHANGE THIS
 
-for filename in os.listdir(folder_path):
-    if not filename.endswith(".wav"):
-        continue
+# Load model
+model = load_model("models/cnn_test.h5", custom_objects={
+    "AdamW": tfa.optimizers.AdamW,
+    "AUC": AUC,
+    "Precision": Precision,
+    "Recall": Recall,
+    })
 
-    parts = filename.split("-")
-    if len(parts) < 4:
-        continue
+# Load audio bytes from file
+with open("C:/Users/lenna/Documents/RUG/Jaar 2/Periode 2b/Applied Machine Learning/Project (AML)/Datasets/IDMT-SMT-AUDIO-EFFECTS/IDMT-SMT-AUDIO-EFFECTS/IDMT-SMT-AUDIO-EFFECTS/Gitarre monophon/Gitarre monophon/Samples/Distortion/G73-64505-4411-37732.wav", "rb") as f:
+    audio_bytes = f.read()
 
-    fx_code = parts[2]  # e.g., "1111"
-    if len(fx_code) == 4 and fx_code[1:3] == "11":
-        new_fx_code = fx_code[0] + "23" + fx_code[3]  # change "11" to "21"
-        parts[2] = new_fx_code
-        new_filename = "-".join(parts)
+preprocessor = CNNFeatureExtractor(dataset_paths=None)
+X = preprocessor.extract_mel_for_prediction(audio_bytes)  # shape: (1, 128, 128, 1)
 
-        old_path = os.path.join(folder_path, filename)
-        new_path = os.path.join(folder_path, new_filename)
-
-        os.rename(old_path, new_path)
-        print(f"Renamed: {filename} → {new_filename}")
+preds = model.predict(X)
+print("Predictions:", preds)
