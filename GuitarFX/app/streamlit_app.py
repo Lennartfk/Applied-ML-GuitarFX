@@ -31,23 +31,17 @@ if uploaded_files:
 
                 for prediction in data["predictions"]:
                     st.subheader(f"File: {prediction['file_name']}")
-                    
-                    # Show audio player
-                    # Find the original uploaded file and play it
                     matching_files = [f for f in uploaded_files if f.name == prediction['file_name']]
                     if matching_files:
                         audio_bytes = matching_files[0].read()
                         st.audio(audio_bytes, format='audio/wav')
-                        # reset file pointer for potential reuse
                         matching_files[0].seek(0)
-                    
-                    # Display confidence bars
                     for conf in prediction["confidences"]:
                         effect = conf["effect"]
                         confidence = conf["confidence"]
                         st.progress(int(confidence * 100))
                         st.write(f"**{effect}:** {confidence:.2%}")
 
-                st.success("Prediction complete!")
+                st.success("Prediction done")
 else:
     st.info("Upload one or more guitar audio `.wav` files to get started.")
