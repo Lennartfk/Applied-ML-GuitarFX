@@ -11,3 +11,4 @@ pyproject.toml
 .flake8
 data/
 !GuitarFX/data/
+kt_dir/
