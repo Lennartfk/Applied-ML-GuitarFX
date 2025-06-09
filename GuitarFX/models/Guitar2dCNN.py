@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from tensorflow.keras.metrics import AUC, Precision, Recall
 from tensorflow_addons.optimizers import AdamW
 from tensorflow.keras.callbacks import Callback
 from typing import Optional, List
@@ -29,11 +30,11 @@ class GuitarEffectCNN:
             conv2_filters = 64
             conv3_filters = 128
             dense_units = 256
-            dropout1 = 0.25
-            dropout2 = 0.25
-            dropout3 = 0.25
+            dropout1 = 0.2
+            dropout2 = 0.3
+            dropout3 = 0.4
             dropout_dense = 0.5
-            lr = 1e-3
+            lr = 1e-4
         else:
             # Use hyperparameters from tuner
             conv1_filters = hp.Int('conv1_filters', 16, 64, step=16, default=32)
@@ -75,7 +76,11 @@ class GuitarEffectCNN:
         model.compile(
             optimizer=optimizer,
             loss=loss_fn,
-            metrics=['accuracy']
+            metrics=[
+                AUC(name='auc'),
+                Precision(name='precision'),
+                Recall(name='recall')
+            ]
         )
 
         return model
@@ -176,6 +181,10 @@ class GuitarEffectCNN:
         if self.model is None:
             raise ValueError("Model is not loaded or trained.")
         return self.model.predict(inputs)
+    
+    def predict_classes(self, inputs, threshold=0.5):
+        probs = self.predict(inputs)
+        return (probs > threshold).astype(int)
     
     def get_features_with_filenames(self, read_file=False, filename="cnn_scaled_onehot.npz"):
         wav_files = self.get_wav_files()

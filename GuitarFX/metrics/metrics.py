@@ -27,6 +27,8 @@ class ModelMetrics:
         val_accuracy: Optional[List[float]] = None,
         train_loss: Optional[List[float]] = None,
         val_loss: Optional[List[float]] = None,
+        val_auc = None,
+        train_auc = None
     ) -> None:
         """
         Initializes the attributes of the ModelMetrics class.
@@ -55,34 +57,38 @@ class ModelMetrics:
         self.val_accuracy = val_accuracy
         self.train_loss = train_loss
         self.val_loss = val_loss
+        self.val_auc = val_auc
+        self.train_auc = train_auc
 
-    def train_val_loss_accuracy_curves(self) -> None:
+    def train_val_loss_auc_curves(self) -> None:
         if (
-            self.train_accuracy is None
-            or self.val_accuracy is None
-            or self.train_loss is None
-            or self.val_loss is None
+            self.train_loss is None or
+            self.val_loss is None or
+            self.train_auc is None or
+            self.val_auc is None
         ):
-            print("Training/Validation accuracy/loss data not provided.")
+            print("Training/Validation loss/AUC data not provided.")
             return
 
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(14, 6))
 
+        # Loss plot
         plt.subplot(1, 2, 1)
-        plt.plot(self.train_accuracy, label="Training Accuracy")
-        plt.plot(self.val_accuracy, label="Validation Accuracy")
-        plt.xlabel("Epochs")
-        plt.ylabel("Accuracy")
-        plt.legend()
-        plt.title("Training and Validation Accuracy")
-
-        plt.subplot(1, 2, 2)
         plt.plot(self.train_loss, label="Training Loss")
         plt.plot(self.val_loss, label="Validation Loss")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
         plt.title("Training and Validation Loss")
+
+        # AUC plot
+        plt.subplot(1, 2, 2)
+        plt.plot(self.train_auc, label="Training AUC")
+        plt.plot(self.val_auc, label="Validation AUC")
+        plt.xlabel("Epochs")
+        plt.ylabel("AUC")
+        plt.legend()
+        plt.title("Training and Validation AUC")
 
         plt.tight_layout()
         plt.show()
@@ -208,17 +214,85 @@ class ModelMetrics:
         plt.grid(True)
         plt.show()
 
+    def classification_metrics_report_single_vs_multi(self) -> None:
+        """
+        Prints metrics separately for single-label and multi-label samples.
+        """
+        # Identify single-label and multi-label indices
+        single_label_indices = [i for i, label_vec in enumerate(self.y_actual) if label_vec.sum() == 1]
+        multi_label_indices = [i for i, label_vec in enumerate(self.y_actual) if label_vec.sum() > 1]
+
+        if single_label_indices:
+            print("\n=== Metrics for SINGLE-LABEL samples ===")
+            y_actual_single = self.y_actual[single_label_indices]
+            y_pred_single = self.y_pred[single_label_indices]
+
+            precision, recall, f1, support = precision_recall_fscore_support(
+                y_actual_single, y_pred_single, zero_division=0
+            )
+            for i, class_name in enumerate(self.label_names):
+                print(
+                    f"{class_name}: Precision={precision[i]:.3f}, Recall={recall[i]:.3f}, "
+                    f"F1={f1[i]:.3f}, Support={support[i]}"
+                )
+            p_micro, r_micro, f1_micro, _ = precision_recall_fscore_support(
+                y_actual_single, y_pred_single, average="micro", zero_division=0
+            )
+            print(
+                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, F1={f1_micro:.3f}"
+            )
+            p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
+                y_actual_single, y_pred_single, average="macro", zero_division=0
+            )
+            print(
+                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, F1={f1_macro:.3f}"
+            )
+            exact_match_acc = np.mean(np.all(y_pred_single == y_actual_single, axis=1))
+            print(f"Exact match accuracy: {exact_match_acc:.4f}")
+            hl = hamming_loss(y_actual_single, y_pred_single)
+            print(f"Hamming loss: {hl:.4f}")
+
+        if multi_label_indices:
+            print("\n=== Metrics for MULTI-LABEL samples ===")
+            y_actual_multi = self.y_actual[multi_label_indices]
+            y_pred_multi = self.y_pred[multi_label_indices]
+
+            precision, recall, f1, support = precision_recall_fscore_support(
+                y_actual_multi, y_pred_multi, zero_division=0
+            )
+            for i, class_name in enumerate(self.label_names):
+                print(
+                    f"{class_name}: Precision={precision[i]:.3f}, Recall={recall[i]:.3f}, "
+                    f"F1={f1[i]:.3f}, Support={support[i]}"
+                )
+            p_micro, r_micro, f1_micro, _ = precision_recall_fscore_support(
+                y_actual_multi, y_pred_multi, average="micro", zero_division=0
+            )
+            print(
+                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, F1={f1_micro:.3f}"
+            )
+            p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
+                y_actual_multi, y_pred_multi, average="macro", zero_division=0
+            )
+            print(
+                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, F1={f1_macro:.3f}"
+            )
+            exact_match_acc = np.mean(np.all(y_pred_multi == y_actual_multi, axis=1))
+            print(f"Exact match accuracy: {exact_match_acc:.4f}")
+            hl = hamming_loss(y_actual_multi, y_pred_multi)
+            print(f"Hamming loss: {hl:.4f}")
+
     def report_all_results(self) -> None:
         """
         Generate all reports and plots.
         """
         if (
-            self.train_accuracy is not None
-            and self.val_accuracy is not None
-            and self.train_loss is not None
-            and self.val_loss is not None
+            self.train_loss is not None and
+            self.val_loss is not None and
+            self.train_auc is not None and
+            self.val_auc is not None
         ):
-            self.train_val_loss_accuracy_curves()
+            self.train_val_loss_auc_curves()
 
         self.plot_confusion_matrices()
         self.plot_per_class_accuracy()

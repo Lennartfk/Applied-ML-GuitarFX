@@ -1,33 +1,53 @@
 import streamlit as st
-import numpy as np
-from GuitarFX.io.model_io import load_model
-from GuitarFX.data.preprocessing import PreProcessing
-from GuitarFX.models.svm import get_features
+import requests
+import io
 
-st.title("Guitar FX SVM Classifier")
+API_URL = "http://127.0.0.1:8000/predict"
 
-# Load the model
-model, scaler, label_encoder = load_model("saved_models/svm_model.pkl")
+st.title("🎸 Guitar Effect Classifier")
 
-# File uploader
-uploaded_file = st.file_uploader("Upload a guitar audio file", type=["wav", "mp3"])
+st.markdown("""
+Upload one or more `.wav` audio files containing guitar effects.  
+Our model will predict the confidence scores for each effect.
+""")
 
-if uploaded_file is not None:
-    # Save file to disk if needed or read directly (optional)
-    with open("temp_audio.wav", "wb") as f:
-        f.write(uploaded_file.read())
+uploaded_files = st.file_uploader("Upload guitar audio files", type=["wav"], accept_multiple_files=True)
 
-    # Process features (assumes get_features can handle one file)
-    X, _, _, _ = get_features(
-        dataset_paths=["temp_audio.wav"],
-        read_csv=False
-    )
-    X_scaled = scaler.transform(X)
+if uploaded_files:
+    if st.button("Classify Audio Files"):
+        files = [('audio_files', (file.name, file, 'audio/wav')) for file in uploaded_files]
 
-    # Predict
-    probs = model.predict_proba(X_scaled)
-    pred = np.argmax(probs, axis=1)
-    pred_label = label_encoder.inverse_transform(pred)
+        with st.spinner("Analyzing audio... this may take a few seconds"):
+            try:
+                response = requests.post(API_URL, files=files)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                st.error(f"API request failed: {e}")
+            else:
+                data = response.json()
+                classes = ['Chorus', 'Distortion', 'Feedback Delay', 'Flanger',
+                           'No Effect', 'Overdrive', 'Phaser', 'Reverb',
+                           'Slapback Delay', 'Tremolo', 'Vibrato']
 
-    st.write("### Prediction:", pred_label[0])
-    st.write("### Probabilities:", dict(zip(label_encoder.classes_, probs[0])))
+                for prediction in data["predictions"]:
+                    st.subheader(f"File: {prediction['file_name']}")
+                    
+                    # Show audio player
+                    # Find the original uploaded file and play it
+                    matching_files = [f for f in uploaded_files if f.name == prediction['file_name']]
+                    if matching_files:
+                        audio_bytes = matching_files[0].read()
+                        st.audio(audio_bytes, format='audio/wav')
+                        # reset file pointer for potential reuse
+                        matching_files[0].seek(0)
+                    
+                    # Display confidence bars
+                    for conf in prediction["confidences"]:
+                        effect = conf["effect"]
+                        confidence = conf["confidence"]
+                        st.progress(int(confidence * 100))
+                        st.write(f"**{effect}:** {confidence:.2%}")
+
+                st.success("Prediction complete!")
+else:
+    st.info("Upload one or more guitar audio `.wav` files to get started.")

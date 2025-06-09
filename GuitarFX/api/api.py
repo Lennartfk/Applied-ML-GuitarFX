@@ -11,19 +11,27 @@ Example request I did on the /predict endpoint:
 curl -X POST "http://127.0.0.1:8000/predict" -F "audio_files=@\"C:/Users/daan3/OneDrive/Documenten/repos/Applied-ML-GuitarFX/datasets/IDMT-SMT-AUDIO-EFFECTS/Gitarre monophon/Chorus/G61-40100-3311-28081.wav\""
 """
 from ..features.cnn_features import CNNFeatureExtractor
+from ..models.Guitar2dCNN import GuitarEffectCNN
 
 from typing import List, Union
 
 import numpy as np
 from pydantic import BaseModel
 from tensorflow.keras.models import load_model
+from tensorflow.keras.metrics import AUC, Precision, Recall
 import tensorflow_addons as tfa
 from starlette.responses import RedirectResponse
 from fastapi import FastAPI, UploadFile, HTTPException, File
 
-model_path = "models\guitar_effect_cnn.h5"
+model_path = "models/cnn_test.h5"
 try:
-    model = load_model(model_path, custom_objects={"AdamW": tfa.optimizers.AdamW})
+    model = load_model(model_path, custom_objects={
+        "AdamW": tfa.optimizers.AdamW,
+        "AUC": AUC,
+        "Precision": Precision,
+        "Recall": Recall,
+        }
+    )
 except OSError:
     raise RuntimeError(f"Failed to load model from {model_path}")
 
@@ -129,9 +137,10 @@ async def predict_cnn(audio_files: Union[UploadFile, List[UploadFile]] = File(..
     predictions = model.predict(X)
 
     results = []
-    classes = ['Chorus', 'Distortion', 'Feedback Delay', 'Flanger',
-               'No Effect', 'Overdrive', 'Phaser', 'Reverb',
-               'Slapback Delay', 'Tremolo', 'Vibrato']
+    classes = [
+    "Feedback Delay", "Slapback Delay", "Reverb", "Chorus", "Flanger",
+    "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive", "No Effect"
+    ]
 
     for file_name, prediction in zip(files_names, predictions):
         confidences = [EffectConfidence(effect=effect, confidence=conf) for effect, conf in zip(classes, prediction)]
