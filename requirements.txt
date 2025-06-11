@@ -13,3 +13,4 @@ soundfile==0.12.1
 pydantic==2.8.2
 streamlit==1.37.1
 tensorflow_addons==0.22.0
+keras-tuner==1.4.7
