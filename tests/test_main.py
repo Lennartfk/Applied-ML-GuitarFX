@@ -1,10 +1,5 @@
 import unittest
-from main import hello_world
-
-
-class MainTest(unittest.TestCase):
-    def test_hello(self):
-        self.assertEqual(hello_world(), "Hello, World!")
+from tests.api.test_api import TestAPI  # noqa: F401
 
 
 if __name__ == "__main__":

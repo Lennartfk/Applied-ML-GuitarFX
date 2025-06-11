@@ -11,17 +11,32 @@ class TestAPI(unittest.TestCase):
     Integration test for the /predict endpoint for the guitar effect classifier
     API.
     """
-
     def setUp(self):
-        self.test_audio_path = "tests/distorted-guitar-sustained-to-chord_66bpm_C_major.wav"
+        """"
+        Sets up the TestAPI class to add a path to the testing audio file and
+        checks whether the path exists to the testing audio file.
+        """
+        self.test_audio_path = "tests/distorted-guitar-sustained" + \
+                               "-to-chord_66bpm_C_major.wav"
         self.assertTrue(os.path.exists(self.test_audio_path), "Can't find " +
                         f"path to test audio: {self.test_audio_path}")
 
     def test_predict_audio_path(self):
+        """
+        Integration test on the /predict endpoint for the guitar effect
+        classifier API.
+
+        Included tests are:
+            - Check if the request on the "/predict" endpoint works using an
+            audio file.
+            - Check if the response from the "/predict" endpoint
+            returns the correct json structure.
+        """
         with open(self.test_audio_path, "rb") as audio_file:
             response = client.post(
                 "/predict",
-                files={"audio_files": ("test_audio.wav", audio_file, "audio/wav")}
+                files={"audio_files": ("test_audio.wav", audio_file,
+                                       "audio/wav")}
             )
 
         self.assertEqual(response.status_code, 200, "Status error:" +
