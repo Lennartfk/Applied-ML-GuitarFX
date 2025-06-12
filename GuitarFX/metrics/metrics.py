@@ -21,6 +21,7 @@ class ModelMetrics:
         self,
         y_pred: Union[np.ndarray, List[float]],
         y_actual: Union[np.ndarray, List[float]],
+        y_pred_probs: Optional[Union[np.ndarray, List[float]]] = None,
         label_names: Optional[List[Union[str, List[str]]]] = None,
         threshold: float = 0.5,
         train_accuracy: Optional[List[float]] = None,
@@ -39,7 +40,12 @@ class ModelMetrics:
         self.y_pred = (self.y_pred_probs >= threshold).astype(int)
 
         num_classes = self.y_actual.shape[1]
-
+        if y_pred_probs is not None:
+            self.y_pred_probs = np.array(y_pred_probs)
+            self.y_pred = (self.y_pred_probs >= threshold).astype(int)
+        else:
+            self.y_pred = np.array(y_pred)
+            self.y_pred_probs = self.y_pred
 
         if label_names is None:
             self.label_names = [f"Class {i}" for i in range(num_classes)]

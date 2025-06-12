@@ -14,3 +14,5 @@ data/
 kt_dir/guitarfx_tuning/
 test.py
 GuitarFX\Lib\sit-packages
+kfold/
+models/

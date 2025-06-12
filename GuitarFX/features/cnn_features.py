@@ -1,9 +1,15 @@
 import librosa
+import librosa.display
 import numpy as np
 from ..data.preprocessing import PreProcessing
-from ..data.loading import extract_multilabel_from_filename, get_wav_files
+from ..io.file_io import extract_multilabel_from_filename, get_wav_files
 import os
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+from typing import List, Tuple
+import gc
+import uuid
+import json
 
 
 class CNNFeatureExtractor(PreProcessing):
@@ -38,7 +44,7 @@ class CNNFeatureExtractor(PreProcessing):
         return mel_spec_db
 
     def _execute_mel_spectrograms(self, max_samples_per_classifier=None):
-        """Extract 2D mel spectrograms for each file in dataset."""
+        """Extract 2D mel spectrograms for each file in dataset with memory error handling."""
 
         label_names = []
         X = []
@@ -47,14 +53,22 @@ class CNNFeatureExtractor(PreProcessing):
         wav_files = get_wav_files(self.dataset_paths, max_files=max_samples_per_classifier)
 
         for wav_file_path in tqdm(wav_files, desc="Processing mel spectrograms"):
-            file_name = os.path.basename(wav_file_path)
-            effect_label = extract_multilabel_from_filename(file_name)
+            try:
+                file_name = os.path.basename(wav_file_path)
+                effect_label = extract_multilabel_from_filename(file_name)
 
-            signal, sr = self.signal_processing(wav_file_path)
-            mel_spec = self._extract_mel(signal, sr)
+                signal, sr = self._signal_processing(wav_file_path, augment=True)
+                mel_spec = self._extract_mel(signal, sr)
 
-            X.append(mel_spec)
-            y.append(effect_label)
+                X.append(mel_spec)
+                y.append(effect_label)
+
+                del signal 
+                gc.collect()
+
+            except MemoryError:
+                print(f"MemoryError: Skipping file {wav_file_path} due to insufficient memory.")
+                continue  # Skip this file and continue with the next one
 
         X = np.array(X)
         y = np.array(y)
@@ -63,13 +77,13 @@ class CNNFeatureExtractor(PreProcessing):
 
         return X, y, label_names
 
-    def save_features(self, X, y, label_names, filename="features.npz"):
+    def _save_features(self, X, y, label_names, filename="features.npz"):
         os.makedirs("data", exist_ok=True)
         path = os.path.join("data", filename)
         np.savez(path, X=X, y=y, label_names=label_names)
         print(f"Features saved to {path}")
 
-    def load_features(self, filename="features.npz"):
+    def _load_features(self, filename="features.npz"):
         path = os.path.join("data", filename)
         if not os.path.exists(path):
             raise FileNotFoundError(f"{path} does not exist.")
@@ -78,7 +92,7 @@ class CNNFeatureExtractor(PreProcessing):
         y = data["y"]
         label_names = data["label_names"].tolist()
         print(f"Features loaded from {path}")
-        print(label_names[0:10])
+        print(label_names)
         return X, y, label_names
 
     def get_cnn_features(self, max_samples_per_classifier=None, read_file=True, filename="features.npz"):
@@ -97,12 +111,12 @@ class CNNFeatureExtractor(PreProcessing):
         """
         if read_file:
             try:
-                return self.load_features(filename)
+                return self._load_features(filename)
             except FileNotFoundError:
                 print("Cache not found, extracting features...")
 
         X, y, label_names = self._execute_mel_spectrograms(max_samples_per_classifier=max_samples_per_classifier)
-        self.save_features(X, y, label_names, filename)
+        self._save_features(X, y, label_names, filename)
         return X, y, label_names
 
     def extract_mel_for_prediction(self, bytes):
@@ -113,3 +127,33 @@ class CNNFeatureExtractor(PreProcessing):
         mel_spec = np.expand_dims(mel_spec, axis=0)
 
         return mel_spec
+    
+    def plot_mel(self, mel_spec):
+        plt.figure(figsize=(10, 4))
+        librosa.display.specshow(mel_spec, x_axis='time', y_axis='mel', sr=44100)
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Mel Spectrogram')
+        plt.tight_layout()
+        plt.show()
+
+    def get_audio_paths_and_labels(self, max_samples_per_classifier=None) -> Tuple[List[str], np.ndarray, List[str]]:
+        wav_files = get_wav_files(self.dataset_paths, max_files=max_samples_per_classifier)
+
+        file_paths = []
+        labels = []
+
+        for wav_path in wav_files:
+            file_name = os.path.basename(wav_path)
+            label = extract_multilabel_from_filename(file_name)
+
+            file_paths.append(wav_path)
+            labels.append(label)
+
+        return file_paths, np.array(labels), self.class_names
+
+    def extract_features_from_audio(self, audio_list: List[np.ndarray]) -> np.ndarray:
+        features = []
+        for y in tqdm(audio_list, desc="Extracting mel features"):
+            mel_spec = self._extract_mel(y, sr=44100)
+            features.append(mel_spec)
+        return np.array(features)

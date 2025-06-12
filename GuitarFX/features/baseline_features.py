@@ -1,7 +1,7 @@
 import librosa
 import numpy as np
 from GuitarFX.data.preprocessing import PreProcessing
-from GuitarFX.data.loading import get_wav_files, extract_multilabel_from_filename
+from GuitarFX.io.file_io import get_wav_files, extract_multilabel_from_filename
 import os
 from tqdm import tqdm
 
@@ -110,7 +110,7 @@ class FeatureExtractor(PreProcessing):
             effect_label = extract_multilabel_from_filename(file_name)
             label_names.append(effect_label)
 
-            signal, sr = self.signal_processing(wav_file_path)
+            signal, sr = self._signal_processing(wav_file_path)
             features = self.extract_mean_features(signal, sr)
 
             X.append(features)

@@ -1,62 +1,81 @@
 from GuitarFX.data.preprocessing import PreProcessing
 from GuitarFX.models.svm import CustomSVM, get_features
 from GuitarFX.metrics.metrics import ModelMetrics
-from GuitarFX.io.model_io import save_model, load_model
+from GuitarFX.io.model_io import save_svm_model
+from sklearn.model_selection import StratifiedKFold
+from tqdm import tqdm
 
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, MultiLabelBinarizer, LabelEncoder
+import numpy as np
 
 if __name__ == "__main__":
     """
-    Run the competitive baseline SVM model using mean audio features.
+    Run the competitive baseline SVM model using mean audio features
+    for multi-label guitar effects classification.
     """
     dataset_paths = [
-        (
-            r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning"
-            r"\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS"
-            r"\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon\Gitarre monophon\Samples"
-        ),
-        (
-            r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning"
-            r"\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS"
-            r"\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2\Gitarre monophon2\Samples"
-        ),
+        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon",
+        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2",
+        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon",
+        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon2"
     ]
 
+    # Initialize pre-processing object
     pre_processing = PreProcessing(dataset_paths)
 
-    # Set read_csv=False if you want to re-extract features
+    # Extract or load features
     X, y, feature_names, label_names = get_features(
         dataset_paths=pre_processing.dataset_paths,
-        read_csv=True,  # Change to False to extract and save again
-        csv_path="data/guitar_monophon_mean_features.csv",
+        read_csv=True,  # Set to False to force re-extraction
+        csv_path="data/svm_features_multi.csv"
     )
 
+    print("y:", y)
+    print("type of y:", type(y))
+
+    # Multi-label encoding
     label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit(y)
+    y_encoded = label_encoder.fit_transform(y)
 
+    # Train-test split
     X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(
-        X, y
+        X, y_encoded
     )
+
+    # Standardization
+    scaler = StandardScaler()
+    X_train_val = scaler.fit_transform(X_train_val)
+    X_test = scaler.transform(X_test)
+
+n_splits = 5
+skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+accuracies = []
+
+for train_index, test_index in tqdm(skf.split(X, y), total=n_splits, desc="CV folds"):
+    X_train_val, X_test = X.iloc[train_index], X.iloc[test_index]
+    y_train_val, y_test = y.iloc[train_index], y.iloc[test_index]
+
+    unique_classes = np.unique(y_train_val)
+    if len(unique_classes) < 2:
+        print(f"Skipping fold due to insufficient classes in training: {unique_classes}")
+        continue 
 
     scaler = StandardScaler()
     X_train_val = scaler.fit_transform(X_train_val)
     X_test = scaler.transform(X_test)
 
-    y_train_val_encoded = label_encoder.transform(y_train_val)
-    y_test_encoded = label_encoder.transform(y_test)
-
-    # The hyper-parameters were decided by the use of a grid search using the
-    # training data for fitting the parameters and validation for evaluating
-    # each combination.
     svm = CustomSVM(C=100, kernel="rbf", gamma=0.01)
-    svm = svm.fit(X_train_val, y_train_val_encoded)
+    svm = svm.fit(X_train_val, y_train_val)
+
     y_pred_proba = svm.predict_proba(X_test)
+    y_pred = np.argmax(y_pred_proba, axis=1)
 
-    svm_metrics = ModelMetrics(
-        y_pred=y_pred_proba,
-        y_actual=y_test_encoded,
-        label_encoder=label_encoder
-    )
-    svm_metrics.report_all_results()
+    accuracy = np.mean(y_pred == y_test)
+    accuracies.append(accuracy)
 
-    save_model(svm, scaler, label_encoder)
+mean_acc = np.mean(accuracies)
+std_err_acc = np.std(accuracies) / np.sqrt(len(accuracies))
+
+print(f"Accuracy: {mean_acc:.4f} ± {std_err_acc:.4f} (standard error)")
+
+save_svm_model(svm, scaler, label_encoder, path="models")

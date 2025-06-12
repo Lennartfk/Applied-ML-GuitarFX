@@ -23,7 +23,7 @@ import tensorflow_addons as tfa
 from starlette.responses import RedirectResponse
 from fastapi import FastAPI, UploadFile, HTTPException, File
 
-model_path = "models/cnn_test.h5"
+model_path = "models/augmented_new.h5"
 try:
     model = load_model(model_path, custom_objects={
         "AdamW": tfa.optimizers.AdamW,
