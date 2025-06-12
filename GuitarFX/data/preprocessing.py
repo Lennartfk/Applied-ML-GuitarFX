@@ -4,11 +4,12 @@ from sklearn.model_selection import KFold, train_test_split
 import io
 import numpy as np
 import soundfile as sf
-import scipy.signal 
+import scipy.signal
 import random
 from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 from tqdm import tqdm
 import gc
+
 
 class PreProcessing:
     """
@@ -32,11 +33,11 @@ class PreProcessing:
     def bandpass_filter(self, y, sr, low=80, high=5000):
         sos = scipy.signal.butter(10, [low,high], btype='band', fs=sr, output='sos')
         return scipy.signal.sosfilt(sos,y)
-    
+
     def rms_normalize(self, y):
         rms = np.sqrt(np.mean(y**2))
         return y / (rms + 1e-6)
-    
+
     def trim(self, y, top_db=25):
         # Only trim leading silence, keep trailing tails
         intervals = librosa.effects.split(y, top_db=top_db, frame_length=1024, hop_length=256)
@@ -44,10 +45,10 @@ class PreProcessing:
             return y  # no non-silent region found
         start = intervals[0][0]
         return y[start:] 
-    
+
     def is_clipped(self, y, threshold=0.98):
         return np.any(np.abs(y) >= threshold)
-    
+
     def augment_audio(self, y, sr):
         # Randomly apply one augmentation
         choice = random.choice(['noise', 'stretch', 'none'])
@@ -140,7 +141,7 @@ class PreProcessing:
         splitter = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=1 - fraction, random_state=seed)
         for sample_idx, _ in splitter.split(X, y):
             return X[sample_idx], y[sample_idx]
-        
+
     def process_filepaths(self, file_paths: List[str], augment: bool) -> List[np.ndarray]:
         """
         Load audio files from file_paths applying augmentation if specified,

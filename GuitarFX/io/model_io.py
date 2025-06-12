@@ -1,22 +1,37 @@
-from typing import List
 import os
+from typing import List
+
 import numpy as np
 import joblib
 import pickle
 import tensorflow as tf
 
+
 def save_svm_model(model, scaler, label_encoder, path):
+    """
+    Save SVM model, scaler, and label encoder.
+
+    Args:
+        model: Trained SVM model object.
+        scaler: Scaler object used for feature normalization.
+        label_encoder: Label encoder object for target labels.
+        path (str): File path to save the model. Scaler and label encoder
+            are saved to related paths by replacing "model" in this path.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     joblib.dump(model, path)
     joblib.dump(scaler, path.replace("model", "scaler"))
     joblib.dump(label_encoder, path.replace("model", "label_encoder"))
-    print(f"SVM model, scaler, and label encoder saved to {os.path.dirname(path)}")
+    print("SVM model, scaler, and label encoder saved to" +
+          f"{os.path.dirname(path)}")
+
 
 def load_svm_model(path):
     model = joblib.load(path)
     scaler = joblib.load(path.replace("model", "scaler"))
     label_encoder = joblib.load(path.replace("model", "label_encoder"))
     return model, scaler, label_encoder
+
 
 def save_cnn_model(cnn_obj, model_path):
     """
@@ -38,6 +53,7 @@ def save_cnn_model(cnn_obj, model_path):
         pickle.dump(cnn_obj.best_hp.values if cnn_obj.best_hp else None, f)
     print(f"Tuner hyperparameters saved to {tuner_path}")
 
+
 def load_cnn_model(model_path):
     model = tf.keras.models.load_model(model_path, compile=False)
     history_path = os.path.splitext(model_path)[0] + "_history.pkl"
@@ -55,6 +71,7 @@ def load_cnn_model(model_path):
 
     return model, history, best_hp
 
+
 def print_class_distribution(y: np.ndarray, label_names: List[str]) -> None:
     """
     Print the distribution of each class in the multilabel dataset.
@@ -66,10 +83,11 @@ def print_class_distribution(y: np.ndarray, label_names: List[str]) -> None:
         count = int(class_counts[i])
         percent = 100 * count / total_samples
         print(f"{label}: {count} samples ({percent:.2f}%)")
-        
+
+
 def load_hyperparameters(pickle_path):
     if not os.path.exists(pickle_path):
         raise FileNotFoundError(f"Trained tuner not found at: {pickle_path}")
-    
+
     with open(pickle_path, "rb") as f:
         return pickle.load(f)

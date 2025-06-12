@@ -1,5 +1,7 @@
 import os
 import glob
+from typing import Union, List
+
 import numpy as np
 
 effect_labels = {
@@ -31,7 +33,12 @@ effect_to_index = {
     "No Effect": 10
 }
 
-def get_wav_files(dataset_paths, max_files=None):
+
+def get_wav_files(dataset_paths: Union[str, List[str]], max_files: int = None) -> List[str]:
+    """
+    Returns:
+        List[str]: List of wav files from the dataset path
+    """
     all_files = []
     for path in dataset_paths:
         found_files = glob.glob(os.path.join(path, "**", "*.wav"), recursive=True)
@@ -39,6 +46,7 @@ def get_wav_files(dataset_paths, max_files=None):
     if max_files:
         return all_files[:max_files]
     return all_files
+
 
 def extract_multilabel_from_filename(filename):
     parts = filename.split("-")
@@ -60,4 +68,3 @@ def extract_multilabel_from_filename(filename):
             label_vector[effect_to_index[effect_name]] = 1.0
 
     return label_vector
-

@@ -1,18 +1,28 @@
-import librosa
-import numpy as np
 from GuitarFX.data.preprocessing import PreProcessing
 from GuitarFX.io.file_io import get_wav_files, extract_multilabel_from_filename
+
 import os
+from typing import List, Tuple
+
+import librosa
+import numpy as np
 from tqdm import tqdm
 
 
 class FeatureExtractor(PreProcessing):
     """Handle the feature extraction from the audio dataset."""
 
-    def __init__(self, dataset_paths):
+    def __init__(self, dataset_paths: str | List[str]) -> None:
+        """
+        Initialize the feature extractor for the competetive baseline support
+        vector machine.
+
+        Inputs:
+            dataset_paths (str | List[str]): Path(s) to dataset.
+        """
         self.dataset_paths = dataset_paths
 
-    def extract_mean_features(self, y, sr):
+    def extract_mean_features(self, y: np.ndarray, sr: int) -> np.ndarray:
         """
         These are the features we use for the competetive baseline model,
         which is support vector machine with radial basis function (RBF)
@@ -35,25 +45,20 @@ class FeatureExtractor(PreProcessing):
             ]
         )
 
-        # feature_names = (
-        #     [f'mfcc_{i+1}' for i in range(20)]
-        #     [f'chroma_{i+1}' for i in range(chromatogram.shape[0])] +
-        #     [f'spectral_contrast_{i+1}' for i in range(spectral_contrast.shape[0])] +
-        #     ['zero_crossing_rate'] +
-        #     ['rms']
-        # )
-
-        # print(feature_names)
-
         return features
 
-    def execute_mean_features(self, max_samples_per_classifier=None):
+    def execute_mean_features(self, max_samples_per_classifier: int = None) \
+            -> Tuple[np.ndarray, np.ndarray, List[str], List[str]]:
         """
         Extract the mean features for each file in dataset.
 
         Inputs:
                 max_samples_per_classifier (int): Limit the sample amount per
-                classifier to limit the amount of time spent for pre-processing.
+                classifier to limit the amount of time spent for
+                pre-processing.
+
+        Returns:
+
         """
         feature_names = [
             "mfcc_1",
@@ -103,7 +108,10 @@ class FeatureExtractor(PreProcessing):
         X = []
         y = []
 
-        wav_files = get_wav_files(self.dataset_paths, max_files=max_samples_per_classifier)
+        wav_files = get_wav_files(
+            self.dataset_paths,
+            max_files=max_samples_per_classifier
+        )
 
         for wav_file_path in tqdm(wav_files, desc="Processing audiofiles"):
             file_name = os.path.basename(wav_file_path)

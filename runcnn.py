@@ -384,8 +384,6 @@ if __name__ == "__main__":
     parser.add_argument('--load_model', type=str, default=None)
     parser.add_argument('--history', type=str, default=None)
 
-    
-
     args = parser.parse_args()
     setup_logging(args.verbose)
 

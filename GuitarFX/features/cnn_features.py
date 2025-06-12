@@ -1,32 +1,59 @@
+from ..data.preprocessing import PreProcessing
+from ..io.file_io import extract_multilabel_from_filename, get_wav_files
+
+import os
+from typing import Union, List, Tuple
+
+import gc
 import librosa
 import librosa.display
 import numpy as np
-from ..data.preprocessing import PreProcessing
-from ..io.file_io import extract_multilabel_from_filename, get_wav_files
-import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from typing import List, Tuple
-import gc
-import uuid
-import json
 
 
 class CNNFeatureExtractor(PreProcessing):
     """Extract 2d mel spectrogram features for CNN input."""
 
-    def __init__(self, dataset_paths, n_mels=128, hop_length=512, cache_dir=None):
+    def __init__(
+            self,
+            dataset_paths: Union[str, List[str]],
+            n_mels: int = 128,
+            hop_length: int = 512
+    ) -> None:
+        """
+        Initialize the feature extractor for the multi-effect convolutional
+        neural neural network. This is mainly for extracting
+        dB-mel spectograms.
+
+        Args:
+            dataset_paths (str | List[str]): Path(s) to dataset.
+            n_mels (int): Number of mel frequency bands.
+            hop_length (int): Hop length for STFT.
+        """
         super().__init__(dataset_paths)
+
         self.n_mels = n_mels
         self.hop_length = hop_length
-        self.cache_dir = cache_dir
         self.class_names = [
             "Feedback Delay", "Slapback Delay", "Reverb", "Chorus", "Flanger",
-            "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive", "No Effect"
+            "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive",
+            "No Effect"
         ]
 
-    def _extract_mel(self, y, sr):
-        """Extract mel spectrogram with fixed width (128 time frames)."""
+    def _extract_mel(self, y: np.ndarray, sr: int) -> np.ndarray:
+        """
+        Extract a normalized mel spectrogram with a fixed width of 128 time
+        frames.
+
+        Args:
+            y (np.ndarray): 1D audio signal.
+            sr (int): Sampling rate of the audio signal.
+
+        Returns:
+            np.ndarray: Normalized dB-scale mel spectrogram
+            (shape: [n_mels, 128]).
+        """
         mel_spec = librosa.feature.melspectrogram(
             y=y, sr=sr, n_mels=self.n_mels, hop_length=self.hop_length
         )
@@ -43,9 +70,21 @@ class CNNFeatureExtractor(PreProcessing):
 
         return mel_spec_db
 
-    def _execute_mel_spectrograms(self, max_samples_per_classifier=None):
-        """Extract 2D mel spectrograms for each file in dataset with memory error handling."""
+    def _execute_mel_spectrograms(
+            self,
+            max_samples_per_classifier: int = None
+    ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+        """
+        Extract 2D mel spectrograms for each file in dataset with memory
+        error handling.
 
+        Args:
+            max_samples_per_classifier (int): The amount of samples to process
+            for each class.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, List[str]]: 
+        """
         label_names = []
         X = []
         y = []
@@ -63,12 +102,13 @@ class CNNFeatureExtractor(PreProcessing):
                 X.append(mel_spec)
                 y.append(effect_label)
 
-                del signal 
+                del signal
                 gc.collect()
 
             except MemoryError:
-                print(f"MemoryError: Skipping file {wav_file_path} due to insufficient memory.")
-                continue  # Skip this file and continue with the next one
+                print(f"MemoryError: Skipping file {wav_file_path} due" +
+                      "to insufficient memory.")
+                continue
 
         X = np.array(X)
         y = np.array(y)
@@ -115,8 +155,12 @@ class CNNFeatureExtractor(PreProcessing):
             except FileNotFoundError:
                 print("Cache not found, extracting features...")
 
-        X, y, label_names = self._execute_mel_spectrograms(max_samples_per_classifier=max_samples_per_classifier)
+        X, y, label_names = self._execute_mel_spectrograms(
+            max_samples_per_classifier=max_samples_per_classifier
+        )
+
         self._save_features(X, y, label_names, filename)
+
         return X, y, label_names
 
     def extract_mel_for_prediction(self, bytes):
@@ -127,7 +171,7 @@ class CNNFeatureExtractor(PreProcessing):
         mel_spec = np.expand_dims(mel_spec, axis=0)
 
         return mel_spec
-    
+
     def plot_mel(self, mel_spec):
         plt.figure(figsize=(10, 4))
         librosa.display.specshow(mel_spec, x_axis='time', y_axis='mel', sr=44100)

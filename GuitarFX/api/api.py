@@ -1,17 +1,4 @@
-"""
-deployment.py
-
-Run "fastapi dev .\GuitarFX\api\api.py in your terminal to start a
-local API server at 127.0.0.1:8000. Ensure that a Keras model is saved in the
-models/ directory. If you have your own trained CNN model, update the
-model_path variable to point to it. Ensure you have installed fastapi by
-installing fastapi[standard] in your virtual environment venv or conda.
-
-Example request I did on the /predict endpoint:
-curl -X POST "http://127.0.0.1:8000/predict" -F "audio_files=@\"C:/Users/daan3/OneDrive/Documenten/repos/Applied-ML-GuitarFX/datasets/IDMT-SMT-AUDIO-EFFECTS/Gitarre monophon/Chorus/G61-40100-3311-28081.wav\""
-"""
 from ..features.cnn_features import CNNFeatureExtractor
-from ..models.Guitar2dCNN import GuitarEffectCNN
 
 from typing import List, Union
 
@@ -37,16 +24,22 @@ except OSError:
 
 
 class EffectConfidence(BaseModel):
+    """
+    Schema represents a single audio effect and its associated confidence
+    score.
+    """
     effect: str = "Chorus"
     confidence: float = 0.3
 
 
 class EffectPrediction(BaseModel):
+    """Schema contains the predicted effects for a specific audio file."""
     file_name: str = "music_effect.wav"
     confidences: List[EffectConfidence]
 
 
 class EffectPredictionResponse(BaseModel):
+    """Schema wraps a list of effect predictions for multiple audio files."""
     predictions: List[EffectPrediction]
 
 
@@ -85,7 +78,10 @@ However, this does not completely eliminate the problem.
 
 
 @app.get("/", description="Root endpoint that redirects to the documentation.")
-async def root():
+async def root() -> RedirectResponse:
+    """
+    Root endpoint that redirects to the documentation.
+    """
     return RedirectResponse(url='/docs')
 
 
@@ -111,7 +107,21 @@ async def root():
     confidence).
     """
 )
-async def predict_cnn(audio_files: Union[UploadFile, List[UploadFile]] = File(...)):
+async def predict_cnn(
+        audio_files: Union[UploadFile, List[UploadFile]] = File(...)
+):
+    """
+    Predict audio guitar effect in uploaded audio file(s) using a multi-effect
+    CNN.
+
+    Args:
+        audio_files (Union[UploadFile, List[UploadFile]]): One or more audio
+        files.
+
+    Returns:
+        EffectPredictionResponse: JSON structured API containing the
+        predictions of the CNN model.
+    """
     if isinstance(audio_files, UploadFile):
         audio_files = [audio_files]
 
@@ -128,7 +138,8 @@ async def predict_cnn(audio_files: Union[UploadFile, List[UploadFile]] = File(..
             X.append(mel_spec)
             files_names.append(audio_file.filename)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing files: {e}")
+        raise HTTPException(status_code=400, detail="Error processing " +
+                            f"files: {e}")
 
     X = [np.squeeze(x) for x in X]
     X = [np.expand_dims(x, axis=-1) for x in X]
@@ -138,12 +149,18 @@ async def predict_cnn(audio_files: Union[UploadFile, List[UploadFile]] = File(..
 
     results = []
     classes = [
-    "Feedback Delay", "Slapback Delay", "Reverb", "Chorus", "Flanger",
-    "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive", "No Effect"
+        "Feedback Delay", "Slapback Delay", "Reverb", "Chorus", "Flanger",
+        "Phaser", "Tremolo", "Vibrato", "Distortion", "Overdrive", "No Effect"
     ]
 
     for file_name, prediction in zip(files_names, predictions):
-        confidences = [EffectConfidence(effect=effect, confidence=conf) for effect, conf in zip(classes, prediction)]
-        results.append(EffectPrediction(file_name=file_name, confidences=confidences))
+        confidences = [
+            EffectConfidence(effect=effect, confidence=conf)
+            for effect, conf in zip(classes, prediction)
+        ]
+        results.append(EffectPrediction(
+            file_name=file_name,
+            confidences=confidences
+        ))
 
     return EffectPredictionResponse(predictions=results)

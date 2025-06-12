@@ -1,21 +1,26 @@
-import streamlit as st
 import requests
-import io
+import streamlit as st
 
 API_URL = "http://127.0.0.1:8000/predict"
 
 st.title("🎸 Guitar Effect Classifier")
 
 st.markdown("""
-Upload one or more `.wav` audio files containing guitar effects.  
+Upload one or more `.wav` audio files containing guitar effects.
 Our model will predict the confidence scores for each effect.
 """)
 
-uploaded_files = st.file_uploader("Upload guitar audio files", type=["wav"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Upload guitar audio files", type=["wav"],
+    accept_multiple_files=True
+)
 
 if uploaded_files:
     if st.button("Classify Audio Files"):
-        files = [('audio_files', (file.name, file, 'audio/wav')) for file in uploaded_files]
+        files = [
+            ('audio_files', (file.name, file, 'audio/wav'))
+            for file in uploaded_files
+        ]
 
         with st.spinner("Analyzing audio... this may take a few seconds"):
             try:
@@ -31,16 +36,19 @@ if uploaded_files:
 
                 for prediction in data["predictions"]:
                     st.subheader(f"File: {prediction['file_name']}")
-                    
+
                     # Show audio player
                     # Find the original uploaded file and play it
-                    matching_files = [f for f in uploaded_files if f.name == prediction['file_name']]
+                    matching_files = [
+                        f for f in uploaded_files
+                        if f.name == prediction['file_name']
+                    ]
                     if matching_files:
                         audio_bytes = matching_files[0].read()
                         st.audio(audio_bytes, format='audio/wav')
                         # reset file pointer for potential reuse
                         matching_files[0].seek(0)
-                    
+
                     # Display confidence bars
                     for conf in prediction["confidences"]:
                         effect = conf["effect"]

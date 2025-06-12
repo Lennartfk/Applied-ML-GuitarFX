@@ -1,22 +1,21 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from typing import List, Optional, Union
+
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
-    classification_report,
     roc_curve,
     auc,
     precision_recall_fscore_support,
     hamming_loss,
-    accuracy_score,
 )
+
 
 class ModelMetrics:
     """
     Reports results for a multi-label classification machine learning model.
     """
-
     def __init__(
         self,
         y_pred: Union[np.ndarray, List[float]],
@@ -28,11 +27,36 @@ class ModelMetrics:
         val_accuracy: Optional[List[float]] = None,
         train_loss: Optional[List[float]] = None,
         val_loss: Optional[List[float]] = None,
-        val_auc = None,
-        train_auc = None
+        val_auc: Optional[List[float]] = None,
+        train_auc: Optional[List[float]] = None
     ) -> None:
         """
         Initializes the attributes of the ModelMetrics class.
+
+        Args:
+            y_pred (Union[np.ndarray, List[float]]): Predicted class labels
+                from the model.
+            y_actual (Union[np.ndarray, List[float]]): Ground truth class
+                labels.
+            y_pred_probs (Optional[Union[np.ndarray, List[float]]], optional):
+                Predicted class probabilities (useful for metrics like AUC).
+            label_names (Optional[List[Union[str, List[str]]]], optional):
+                Names of the labels/classes.
+            threshold (float, optional): Threshold for converting
+                probabilities to class predictions (used in binary
+                classification). Defaults to 0.5.
+            train_accuracy (Optional[List[float]], optional): List of training
+                accuracy values (e.g., across epochs).
+            val_accuracy (Optional[List[float]], optional):
+                List of validation accuracy values (e.g., across epochs).
+            train_loss (Optional[List[float]], optional):
+                List of training loss values.
+            val_loss (Optional[List[float]], optional): List of validation
+                loss values.
+            val_auc (Optional[List[float]], optional): List of validation AUC
+                scores.
+            train_auc (Optional[List[float]], optional): List of training AUC
+                scores.
         """
         self.y_pred_probs = np.array(y_pred)
         self.y_actual = np.array(y_actual)
@@ -56,7 +80,8 @@ class ModelMetrics:
             else:
                 self.label_names = label_names
         else:
-            print(f"[Warning] Invalid label_names format. Using default labels.")
+            print("[Warning] Invalid label_names format." +
+                  "Using default labels.")
             self.label_names = [f"Class {i}" for i in range(num_classes)]
 
         self.train_accuracy = train_accuracy
@@ -67,6 +92,10 @@ class ModelMetrics:
         self.train_auc = train_auc
 
     def train_val_loss_auc_curves(self) -> None:
+        """
+        Reports the training and validation loss curves and the training and
+        validation ROC curves over epochs using matplotlib.
+        """
         if (
             self.train_loss is None or
             self.val_loss is None or
@@ -99,16 +128,21 @@ class ModelMetrics:
         plt.tight_layout()
         plt.show()
 
-    def _confusion_matrix_per_class(self):
+    def _confusion_matrix_per_class(self) -> np.ndarray:
         """
-        Returns a dictionary with class name keys and confusion matrix values (2x2)
-        for each class, since multi-label confusion matrix is per class.
+        Creates a confusion matrix for each class.
+
+        Returns:
+            np.ndarray: dictionary with class name keys and confusion matrix
+            values (2x2) for each class, since multi-label confusion matrix is
+            per class.
         """
         cms = {}
         n_classes = self.y_actual.shape[1]
         for i, class_name in enumerate(self.label_names):
             if i >= n_classes:
-                print(f"[Warning] Skipping label '{class_name}' - index {i} exceeds number of classes ({n_classes})")
+                print(f"[Warning] Skipping label '{class_name}' - index" +
+                f"{i} exceeds number of classes ({n_classes})")
                 continue
             cms[class_name] = confusion_matrix(
                 self.y_actual[:, i], self.y_pred[:, i], labels=[0, 1]
