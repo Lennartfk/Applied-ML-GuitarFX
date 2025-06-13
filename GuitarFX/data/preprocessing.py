@@ -1,14 +1,15 @@
-from typing import List, Union, Tuple
-import librosa
 from sklearn.model_selection import KFold, train_test_split
+
 import io
-import numpy as np
-import soundfile as sf
-import scipy.signal
 import random
-from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
+from typing import List, Union, Tuple
+
+import librosa
+import numpy as np
+import scipy.signal
 from tqdm import tqdm
-import gc
+import soundfile as sf
+from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 
 
 class PreProcessing:
@@ -31,7 +32,8 @@ class PreProcessing:
             self.dataset_paths = list(dataset_paths)
 
     def bandpass_filter(self, y, sr, low=80, high=5000):
-        sos = scipy.signal.butter(10, [low,high], btype='band', fs=sr, output='sos')
+        sos = scipy.signal.butter(10, [low, high], btype='band', fs=sr,
+                                  output='sos')
         return scipy.signal.sosfilt(sos,y)
 
     def rms_normalize(self, y):
@@ -109,9 +111,11 @@ class PreProcessing:
         test_size: float = 0.2,
         val_size: float = 0.25,
         seed: int = 23
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+               np.ndarray]:
         """
-        Split dataset into train/val/test sets with iterative multilabel stratification.
+        Split dataset into train/val/test sets with iterative multilabel
+        stratification.
 
         Parameters:
             test_size: fraction for test set
@@ -142,10 +146,21 @@ class PreProcessing:
         for sample_idx, _ in splitter.split(X, y):
             return X[sample_idx], y[sample_idx]
 
-    def process_filepaths(self, file_paths: List[str], augment: bool) -> List[np.ndarray]:
+    def process_filepaths(
+            self,
+            file_paths: List[str],
+            augment: bool
+    ) -> List[np.ndarray]:
         """
         Load audio files from file_paths applying augmentation if specified,
         returning a list of processed audio arrays.
+
+        file_paths (List[str]): Path to the files to process
+        augment (bool): Choice to augment the audio files with real-life noise
+            or not.
+
+        Returns:
+            List[np.ndarray]: List of processed audio arrays.
         """
         processed_audio = []
         for fp in tqdm(file_paths, desc=f"{'Augmenting and processing' if augment else 'Processing'} audio files"):

@@ -1,22 +1,26 @@
-from GuitarFX.models.
-
 import os
-from typing import List
+from typing import List, Tuple
 
 import joblib
 import pickle
 import numpy as np
 import tensorflow as tf
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 
-def save_svm_model(model, scaler, label_encoder, path) -> None:
+def save_svm_model(
+        model,
+        scaler: StandardScaler,
+        label_encoder: LabelEncoder,
+        path: str
+) -> None:
     """
     Save SVM model, scaler, and label encoder.
 
     Args:
         model: Trained SVM model object.
-        scaler: Scaler object used for feature normalization.
-        label_encoder: Label encoder object for target labels.
+        scaler (StandardScaler): Scaler object used for feature normalization.
+        label_encoder (LabelEncoder): Label encoder object for target labels.
         path (str): File path to save the model. Scaler and label encoder
             are saved to related paths by replacing "model" in this path.
     """
@@ -28,17 +32,28 @@ def save_svm_model(model, scaler, label_encoder, path) -> None:
           f"{os.path.dirname(path)}")
 
 
-def load_svm_model(path: str):
+def load_svm_model(path: str) -> Tuple:
+    """
+    Loads an support vector machine (SVM) model using joblibload.
+
+    Args:
+        path (str): Path to the save model.
+
+    Returns:
+        Tuple: The SVM model, the scaler for the inputs of the SVM model and
+        the label encoder of the SVM model.
+    """
     model = joblib.load(path)
     scaler = joblib.load(path.replace("model", "scaler"))
     label_encoder = joblib.load(path.replace("model", "label_encoder"))
     return model, scaler, label_encoder
 
 
-def save_cnn_model(cnn_obj, model_path):
+def save_cnn_model(cnn_obj, model_path) -> None:
     """
-    cnn_obj: instance of GuitarEffectCNN class
-    Saves the keras model + history + tuner best HP
+    Args:
+        cnn_obj: instance of GuitarEffectCNN class
+        Saves the keras model + history + tuner best HP
     """
     cnn_obj.model.save(model_path)
     print(f"CNN model saved to {model_path}")
