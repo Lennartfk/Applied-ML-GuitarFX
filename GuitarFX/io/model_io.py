@@ -1,13 +1,15 @@
+from GuitarFX.models.
+
 import os
 from typing import List
 
-import numpy as np
 import joblib
 import pickle
+import numpy as np
 import tensorflow as tf
 
 
-def save_svm_model(model, scaler, label_encoder, path):
+def save_svm_model(model, scaler, label_encoder, path) -> None:
     """
     Save SVM model, scaler, and label encoder.
 
@@ -26,7 +28,7 @@ def save_svm_model(model, scaler, label_encoder, path):
           f"{os.path.dirname(path)}")
 
 
-def load_svm_model(path):
+def load_svm_model(path: str):
     model = joblib.load(path)
     scaler = joblib.load(path.replace("model", "scaler"))
     label_encoder = joblib.load(path.replace("model", "label_encoder"))

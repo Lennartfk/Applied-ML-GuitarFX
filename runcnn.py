@@ -67,13 +67,13 @@ def load_features(dataset_paths: List[str]) -> Tuple[np.ndarray, np.ndarray, Lis
     return X, y, label_names
 
 
-
 def prepare_data(X: np.ndarray, y: np.ndarray, preprocessing: PreProcessing, sample_fraction: float = 0.5, seed: int = 23, label_names: List[str] = None):
     X_sampled, y_sampled = preprocessing.subsample_iterative_stratification(
     X=X, y=y, fraction=sample_fraction, seed=seed)
     print_class_distribution(y_sampled, label_names=label_names)
     X_processed = X_sampled[..., np.newaxis]
     return X_processed, y_sampled
+
 
 def shuffle_dataset(X, y, seed=None):
     if seed is not None:
@@ -85,6 +85,7 @@ def shuffle_dataset(X, y, seed=None):
     np.random.shuffle(indices)
 
     return X[indices], y[indices]
+
 
 def train_and_evaluate(
     model: GuitarEffectCNN,
@@ -171,14 +172,20 @@ def train_and_evaluate(
 
 def save_features_incrementally(extractor, audio_list, save_path, dtype=np.float32, feature_shape=(128,128)):
     n_samples = len(audio_list)
-    memmap = np.memmap(save_path, dtype=dtype, mode='w+', shape=(n_samples, *feature_shape))
-    
+    memmap = np.memmap(
+        save_path,
+        dtype=dtype,
+        mode='w+',
+        shape=(n_samples, *feature_shape)
+    )
+
     for i, audio in enumerate(audio_list):
         feat = extractor.extract_features_from_audio([audio])[0].astype(dtype)
         memmap[i] = feat
         if i % 500 == 0:
             logging.info(f"Saved {i}/{n_samples} features to {save_path}")
     memmap.flush()
+
 
 def main(tune: bool = False, use_kfold: bool = False, dataset_paths: Optional[List[str]] = None, load_model: Optional[str]= None, history_path: Optional[str] = None) -> None:
     if dataset_paths is None or len(dataset_paths) == 0:
@@ -316,8 +323,7 @@ def main(tune: bool = False, use_kfold: bool = False, dataset_paths: Optional[Li
 
     X_train, y_train = shuffle_dataset(X_train, y_train, seed=23)
     X_val, y_val = shuffle_dataset(X_val, y_val, seed=23)
-    X_test, y_test = shuffle_dataset(X_test, y_test, seed=23)
-        
+    X_test, y_test = shuffle_dataset(X_test, y_test, seed=23)  
 
     # Save labels and meta info separately (small size)
     meta_path = os.path.join(FEATURES_DIR, "feature_labels.npz")
