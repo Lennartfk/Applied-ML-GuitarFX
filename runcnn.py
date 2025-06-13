@@ -48,11 +48,13 @@ def verify_dataset_paths(paths: List[str]) -> List[str]:
 
 
 
+
 def shuffle_dataset(X, y, seed=None):
     if seed is not None:
         np.random.seed(seed)
     indices = np.random.permutation(len(X))
     return X[indices], y[indices]
+
 
 
 def train_and_evaluate(
