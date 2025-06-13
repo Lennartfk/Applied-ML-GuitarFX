@@ -2,7 +2,7 @@ from ..data.preprocessing import PreProcessing
 from ..io.file_io import extract_multilabel_from_filename, get_wav_files
 
 import os
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 
 import gc
 import librosa
@@ -135,33 +135,70 @@ class CNNFeatureExtractor(PreProcessing):
         print(label_names)
         return X, y, label_names
 
-    def get_cnn_features(self, max_samples_per_classifier=None, read_file=True, filename="features.npz"):
+    def get_cnn_features(
+        self,
+        output_dir: str = "features",
+        split_data: Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = None,
+        label_names: Optional[List[str]] = None,
+        augment_train: bool = True
+    ) -> Tuple[np.memmap, np.memmap, np.memmap, np.ndarray, np.ndarray, np.ndarray, List[str]]:
         """
-        Return CNN features either by loading from cache or by extracting and saving.
+        Extract or load CNN features into memmap format (.dat) and return them along with labels.
 
         Args:
-            max_samples_per_classifier (int | None): max samples per class to process.
-            read_file (bool): if True, try to load cached features; else extract fresh.
-            filename (str): filename for caching features (.npz).
+            output_dir (str): Folder where .dat files and labels will be stored.
+            split_data (tuple or None): Tuple of (X_train_fp, X_val_fp, X_test_fp, y_train, y_val, y_test).
+                If None, raises error.
+            label_names (list or None): List of label class names. Required if split_data is provided.
+            augment_train (bool): Whether to augment training features.
 
         Returns:
-            X (np.ndarray): feature array (num_samples, n_mels, 128)
-            y (np.ndarray): labels array
-            label_names (list): list of label strings
+            X_train, X_val, X_test (np.memmap): Memmap arrays for features.
+            y_train, y_val, y_test (np.ndarray): Corresponding labels.
+            label_names (List[str]): Label class names.
         """
-        if read_file:
-            try:
-                return self._load_features(filename)
-            except FileNotFoundError:
-                print("Cache not found, extracting features...")
+        if split_data is None or label_names is None:
+            raise ValueError("split_data and label_names must be provided")
 
-        X, y, label_names = self._execute_mel_spectrograms(
-            max_samples_per_classifier=max_samples_per_classifier
-        )
+        os.makedirs(output_dir, exist_ok=True)
 
-        self._save_features(X, y, label_names, filename)
+        # Unpack split data
+        X_train_fp, X_val_fp, X_test_fp, y_train, y_val, y_test = split_data
 
-        return X, y, label_names
+        # Define memmap paths
+        train_memmap_path = os.path.join(output_dir, "train_features.dat")
+        val_memmap_path = os.path.join(output_dir, "val_features.dat")
+        test_memmap_path = os.path.join(output_dir, "test_features.dat")
+        label_path = os.path.join(output_dir, "feature_labels.npz")
+
+        feature_shape = (128, 128)
+        dtype = np.float32
+
+        def save_features(filepaths, destination, augment):
+            audio_list = self.process_filepaths(filepaths, augment=augment)
+            shape = (len(audio_list), *feature_shape)
+            memmap = np.memmap(destination, dtype=dtype, mode='w+', shape=shape)
+            for i, audio in enumerate(tqdm(audio_list, desc=f"Extracting to {os.path.basename(destination)}")):
+                memmap[i] = self._extract_mel(audio, sr=44100)
+            memmap.flush()
+
+        # Extract or load features
+        if not os.path.exists(train_memmap_path):
+            save_features(X_train_fp, train_memmap_path, augment=augment_train)
+        if not os.path.exists(val_memmap_path):
+            save_features(X_val_fp, val_memmap_path, augment=False)
+        if not os.path.exists(test_memmap_path):
+            save_features(X_test_fp, test_memmap_path, augment=False)
+
+        # Save labels
+        np.savez(label_path, y_train=y_train, y_val=y_val, y_test=y_test, label_names=label_names)
+
+        # Load memmap arrays
+        X_train = np.memmap(train_memmap_path, dtype=dtype, mode='r', shape=(len(X_train_fp), *feature_shape))
+        X_val = np.memmap(val_memmap_path, dtype=dtype, mode='r', shape=(len(X_val_fp), *feature_shape))
+        X_test = np.memmap(test_memmap_path, dtype=dtype, mode='r', shape=(len(X_test_fp), *feature_shape))
+
+        return X_train, X_val, X_test, y_train, y_val, y_test, label_names
 
     def extract_mel_for_prediction(self, bytes):
         """Extract a single mel spectrogram ready for CNN prediction."""

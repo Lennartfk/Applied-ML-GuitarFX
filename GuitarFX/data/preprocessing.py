@@ -139,10 +139,10 @@ class PreProcessing:
 
     def subsample_iterative_stratification(self, X, y, fraction=0.5, seed=23):
         splitter = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=1 - fraction, random_state=seed)
-        for sample_idx, _ in splitter.split(X, y):
-            return X[sample_idx], y[sample_idx]
+        for train_idx, _ in splitter.split(X, y):
+            return train_idx
 
-    def process_filepaths(self, file_paths: List[str], augment: bool) -> List[np.ndarray]:
+    def process_filepaths(self, file_paths: List[str], augment: bool, fraction: float = 1.0) -> List[np.ndarray]:
         """
         Load audio files from file_paths applying augmentation if specified,
         returning a list of processed audio arrays.

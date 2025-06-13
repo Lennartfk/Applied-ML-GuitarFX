@@ -32,7 +32,7 @@ effect_to_index = {
     "No Effect": 10
 }
 
-def get_wav_files(dataset_paths, max_files=None, skip_alternate=True):
+def get_wav_files(dataset_paths, max_files=None, skip_alternate=False):
     all_files = []
     for path in dataset_paths:
         subfolders = [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
@@ -40,10 +40,6 @@ def get_wav_files(dataset_paths, max_files=None, skip_alternate=True):
             found_files = glob.glob(os.path.join(subfolder, "**", "*.wav"), recursive=True)
             print(f"Found {len(found_files)} WAV files in subfolder: {subfolder}")
             all_files.extend(found_files)
-
-    if skip_alternate:
-        # Skip every other file
-        all_files = all_files[::2]
 
     if max_files:
         return all_files[:max_files]
