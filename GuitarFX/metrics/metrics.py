@@ -73,9 +73,12 @@ class ModelMetrics:
 
         if label_names is None:
             self.label_names = [f"Class {i}" for i in range(num_classes)]
-        elif isinstance(label_names, list) and all(isinstance(l, str) for l in label_names):
+        elif isinstance(label_names, list) and all(isinstance(label, str)
+                                                   for label in label_names):
             if len(label_names) != num_classes:
-                print(f"[Warning] Provided {len(label_names)} label names, but expected {num_classes}. Using default labels instead.")
+                print(f"[Warning] Provided {len(label_names)} label names, " +
+                      f"but expected {num_classes}. Using default " +
+                      "labels instead.")
                 self.label_names = [f"Class {i}" for i in range(num_classes)]
             else:
                 self.label_names = label_names
@@ -142,7 +145,7 @@ class ModelMetrics:
         for i, class_name in enumerate(self.label_names):
             if i >= n_classes:
                 print(f"[Warning] Skipping label '{class_name}' - index" +
-                f"{i} exceeds number of classes ({n_classes})")
+                      f"{i} exceeds number of classes ({n_classes})")
                 continue
             cms[class_name] = confusion_matrix(
                 self.y_actual[:, i], self.y_pred[:, i], labels=[0, 1]
@@ -208,7 +211,8 @@ class ModelMetrics:
         print("Per-class Precision, Recall, F1-score and Support:\n")
         for i, class_name in enumerate(self.label_names):
             print(
-                f"{class_name}: Precision={precision[i]:.3f}, Recall={recall[i]:.3f}, "
+                f"{class_name}: Precision={precision[i]:.3f},"
+                f"  Recall={recall[i]:.3f}, "
                 f"F1={f1[i]:.3f}, Support={support[i]}"
             )
 
@@ -217,7 +221,8 @@ class ModelMetrics:
             self.y_actual, self.y_pred, average="micro", zero_division=0
         )
         print(
-            f"\nMicro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, F1={f1_micro:.3f}"
+            f"\nMicro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, "
+            f"F1={f1_micro:.3f}"
         )
 
         # Macro average
@@ -225,7 +230,8 @@ class ModelMetrics:
             self.y_actual, self.y_pred, average="macro", zero_division=0
         )
         print(
-            f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, F1={f1_macro:.3f}"
+            f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, "
+            f"F1={f1_macro:.3f}"
         )
 
         # Exact match accuracy (subset accuracy)
@@ -242,7 +248,10 @@ class ModelMetrics:
         """
         plt.figure(figsize=(10, 7))
         for i, class_name in enumerate(self.label_names):
-            fpr, tpr, _ = roc_curve(self.y_actual[:, i], self.y_pred_probs[:, i])
+            fpr, tpr, _ = roc_curve(
+                self.y_actual[:, i],
+                self.y_pred_probs[:, i]
+            )
             auc_score = auc(fpr, tpr)
             plt.plot(fpr, tpr, label=f"{class_name} (AUC = {auc_score:.2f})")
 
@@ -259,8 +268,10 @@ class ModelMetrics:
         Prints metrics separately for single-label and multi-label samples.
         """
         # Identify single-label and multi-label indices
-        single_label_indices = [i for i, label_vec in enumerate(self.y_actual) if label_vec.sum() == 1]
-        multi_label_indices = [i for i, label_vec in enumerate(self.y_actual) if label_vec.sum() > 1]
+        single_label_indices = [i for i, label_vec in enumerate(self.y_actual)
+                                if label_vec.sum() == 1]
+        multi_label_indices = [i for i, label_vec in enumerate(self.y_actual)
+                               if label_vec.sum() > 1]
 
         if single_label_indices:
             print("\n=== Metrics for SINGLE-LABEL samples ===")
@@ -272,22 +283,32 @@ class ModelMetrics:
             )
             for i, class_name in enumerate(self.label_names):
                 print(
-                    f"{class_name}: Precision={precision[i]:.3f}, Recall={recall[i]:.3f}, "
+                    f"{class_name}: Precision={precision[i]:.3f}, "
+                    f"Recall={recall[i]:.3f}, "
                     f"F1={f1[i]:.3f}, Support={support[i]}"
                 )
             p_micro, r_micro, f1_micro, _ = precision_recall_fscore_support(
-                y_actual_single, y_pred_single, average="micro", zero_division=0
+                y_actual_single,
+                y_pred_single,
+                average="micro",
+                zero_division=0
             )
             print(
-                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, F1={f1_micro:.3f}"
+                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, "
+                f"F1={f1_micro:.3f}"
             )
             p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
-                y_actual_single, y_pred_single, average="macro", zero_division=0
+                y_actual_single,
+                y_pred_single,
+                average="macro",
+                zero_division=0
             )
             print(
-                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, F1={f1_macro:.3f}"
+                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, "
+                f"F1={f1_macro:.3f}"
             )
-            exact_match_acc = np.mean(np.all(y_pred_single == y_actual_single, axis=1))
+            exact_match_acc = np.mean(np.all(y_pred_single == y_actual_single,
+                                             axis=1))
             print(f"Exact match accuracy: {exact_match_acc:.4f}")
             hl = hamming_loss(y_actual_single, y_pred_single)
             print(f"Hamming loss: {hl:.4f}")
@@ -302,22 +323,26 @@ class ModelMetrics:
             )
             for i, class_name in enumerate(self.label_names):
                 print(
-                    f"{class_name}: Precision={precision[i]:.3f}, Recall={recall[i]:.3f}, "
+                    f"{class_name}: Precision={precision[i]:.3f}, "
+                    f"Recall={recall[i]:.3f}, "
                     f"F1={f1[i]:.3f}, Support={support[i]}"
                 )
             p_micro, r_micro, f1_micro, _ = precision_recall_fscore_support(
                 y_actual_multi, y_pred_multi, average="micro", zero_division=0
             )
             print(
-                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, F1={f1_micro:.3f}"
+                f"Micro-avg Precision={p_micro:.3f}, Recall={r_micro:.3f}, "
+                f"F1={f1_micro:.3f}"
             )
             p_macro, r_macro, f1_macro, _ = precision_recall_fscore_support(
                 y_actual_multi, y_pred_multi, average="macro", zero_division=0
             )
             print(
-                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, F1={f1_macro:.3f}"
+                f"Macro-avg Precision={p_macro:.3f}, Recall={r_macro:.3f}, "
+                f"F1={f1_macro:.3f}"
             )
-            exact_match_acc = np.mean(np.all(y_pred_multi == y_actual_multi, axis=1))
+            exact_match_acc = np.mean(np.all(y_pred_multi == y_actual_multi,
+                                             axis=1))
             print(f"Exact match accuracy: {exact_match_acc:.4f}")
             hl = hamming_loss(y_actual_multi, y_pred_multi)
             print(f"Hamming loss: {hl:.4f}")

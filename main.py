@@ -1,11 +1,10 @@
 from GuitarFX.data.preprocessing import PreProcessing
 from GuitarFX.models.svm import CustomSVM, get_features
-from GuitarFX.metrics.metrics import ModelMetrics
 from GuitarFX.io.model_io import save_svm_model
 from sklearn.model_selection import StratifiedKFold
 from tqdm import tqdm
 
-from sklearn.preprocessing import StandardScaler, MultiLabelBinarizer, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 import numpy as np
 
 if __name__ == "__main__":
@@ -13,11 +12,18 @@ if __name__ == "__main__":
     Run the competitive baseline SVM model using mean audio features
     for multi-label guitar effects classification.
     """
+    base_path = (
+        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b"
+        r"\Applied Machine Learning"
+        r"\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS"
+        r"\IDMT-SMT-AUDIO-EFFECTS"
+        r"\IDMT-SMT-AUDIO-EFFECTS"
+    )
     dataset_paths = [
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre monophon2",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon",
-        r"C:\Users\lenna\Documents\RUG\Jaar 2\Periode 2b\Applied Machine Learning\Project (AML)\Datasets\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\IDMT-SMT-AUDIO-EFFECTS\Gitarre polyphon2"
+        fr"{base_path}\Gitarre monophon",
+        fr"{base_path}\Gitarre monophon2",
+        fr"{base_path}\Gitarre polyphon",
+        fr"{base_path}\Gitarre polyphon2",
     ]
 
     # Initialize pre-processing object
@@ -38,7 +44,7 @@ if __name__ == "__main__":
     y_encoded = label_encoder.fit_transform(y)
 
     # Train-test split
-    X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(
+    X_train_val, X_test, y_train_val, y_test, folds = pre_processing.data_splitting(  # noqa E501
         X, y_encoded
     )
 
@@ -51,14 +57,16 @@ n_splits = 5
 skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 accuracies = []
 
-for train_index, test_index in tqdm(skf.split(X, y), total=n_splits, desc="CV folds"):
+for train_index, test_index in tqdm(skf.split(X, y), total=n_splits,
+                                    desc="CV folds"):
     X_train_val, X_test = X.iloc[train_index], X.iloc[test_index]
     y_train_val, y_test = y.iloc[train_index], y.iloc[test_index]
 
     unique_classes = np.unique(y_train_val)
     if len(unique_classes) < 2:
-        print(f"Skipping fold due to insufficient classes in training: {unique_classes}")
-        continue 
+        print("Skipping fold due to insufficient classes in training:"
+              f"{unique_classes}")
+        continue
 
     scaler = StandardScaler()
     X_train_val = scaler.fit_transform(X_train_val)
