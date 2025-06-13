@@ -44,35 +44,8 @@ def setup_logging(verbosity: int) -> None:
     logging.basicConfig(level=level, format='[%(levelname)s] %(message)s')
 
 def verify_dataset_paths(paths: List[str]) -> List[str]:
-<<<<<<< HEAD
     return [p for p in paths if os.path.exists(p)]
-=======
-    valid_paths = []
-    for p in paths:
-        if os.path.exists(p):
-            valid_paths.append(p)
-        else:
-            logging.warning(f"Dataset path does not exist: {p}")
-    if not valid_paths:
-        raise FileNotFoundError("No valid dataset paths found. Check dataset paths.")
-    return valid_paths
 
-
-def load_features(dataset_paths: List[str]) -> Tuple[np.ndarray, np.ndarray, List[str]]:
-    extractor = CNNFeatureExtractor(dataset_paths=dataset_paths)
-    X, y, label_names = extractor.get_cnn_features(filename="augmented.npz", read_file=True)
-    if not isinstance(label_names, list):
-        label_names = label_names.tolist()
-    return X, y, label_names
-
-
-def prepare_data(X: np.ndarray, y: np.ndarray, preprocessing: PreProcessing, sample_fraction: float = 0.5, seed: int = 23, label_names: List[str] = None):
-    X_sampled, y_sampled = preprocessing.subsample_iterative_stratification(
-    X=X, y=y, fraction=sample_fraction, seed=seed)
-    print_class_distribution(y_sampled, label_names=label_names)
-    X_processed = X_sampled[..., np.newaxis]
-    return X_processed, y_sampled
->>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
 
 
 def shuffle_dataset(X, y, seed=None):
@@ -144,44 +117,9 @@ def train_and_evaluate(
 def main(tune: bool = False, use_kfold: bool = False, dataset_paths: Optional[List[str]] = None, load_model: Optional[str] = None, history_path: Optional[str] = None) -> None:
     dataset_paths = verify_dataset_paths(dataset_paths or DEFAULT_DATASET_PATHS)
 
-<<<<<<< HEAD
     preprocessing = PreProcessing(dataset_paths)
     extractor = CNNFeatureExtractor(dataset_paths)
 
-=======
-def save_features_incrementally(extractor, audio_list, save_path, dtype=np.float32, feature_shape=(128,128)):
-    n_samples = len(audio_list)
-    memmap = np.memmap(
-        save_path,
-        dtype=dtype,
-        mode='w+',
-        shape=(n_samples, *feature_shape)
-    )
-
-    for i, audio in enumerate(audio_list):
-        feat = extractor.extract_features_from_audio([audio])[0].astype(dtype)
-        memmap[i] = feat
-        if i % 500 == 0:
-            logging.info(f"Saved {i}/{n_samples} features to {save_path}")
-    memmap.flush()
-
-
-def main(tune: bool = False, use_kfold: bool = False, dataset_paths: Optional[List[str]] = None, load_model: Optional[str]= None, history_path: Optional[str] = None) -> None:
-    if dataset_paths is None or len(dataset_paths) == 0:
-        dataset_paths = DEFAULT_DATASET_PATHS
-    dataset_paths = verify_dataset_paths(dataset_paths)
-
-    preprocessing = PreProcessing(dataset_paths=dataset_paths)
-    extractor = CNNFeatureExtractor(dataset_paths=dataset_paths)
-
-    TRAIN_SUBSAMPLE_FRACTION = 0.7
-    VAL_SUBSAMPLE_FRACTION = 1   
-    TEST_SUBSAMPLE_FRACTION = 1  
-
-    SPLIT_FILE = os.path.join(DATA_ROOT, "splits", "split_data.npz")
-
-    # Try loading cached split
->>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
     if os.path.exists(SPLIT_FILE):
         logging.info("Loading cached split...")
         split_data = np.load(SPLIT_FILE, allow_pickle=True)
@@ -225,11 +163,9 @@ def main(tune: bool = False, use_kfold: bool = False, dataset_paths: Optional[Li
 
     X_train, y_train = shuffle_dataset(X_train, y_train, seed=23)
     X_val, y_val = shuffle_dataset(X_val, y_val, seed=23)
-<<<<<<< HEAD
     X_test, y_test = shuffle_dataset(X_test, y_test, seed=23)
-=======
     X_test, y_test = shuffle_dataset(X_test, y_test, seed=23)  
->>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
+    X_test, y_test = shuffle_dataset(X_test, y_test, seed=23)  
 
     model = GuitarEffectCNN(input_shape=(128, 128, 1), num_classes=len(label_names))
 

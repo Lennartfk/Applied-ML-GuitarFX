@@ -147,13 +147,19 @@ class PreProcessing:
             return train_idx
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def process_filepaths(self, file_paths: List[str], augment: bool, fraction: float = 1.0) -> List[np.ndarray]:
 =======
+=======
+>>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
     def process_filepaths(
             self,
             file_paths: List[str],
             augment: bool
     ) -> List[np.ndarray]:
+<<<<<<< HEAD
+>>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
+=======
 >>>>>>> 050e520f9799d53f495f6ca1ab139f74b7ba5b1f
         """
         Load audio files from file_paths applying augmentation if specified,
